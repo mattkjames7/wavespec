@@ -1,0 +1,185 @@
+\documentclass[a4paper,10pt]{article}
+%\documentclass[a4paper,10pt]{scrartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage{lineno}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{times}
+\usepackage[T1]{fontenc}  % to get the appropriate fonts for icelandic thorn
+\usepackage{textcomp}
+\usepackage{natbib}
+\usepackage{placeins}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codered}{rgb}{1.0,0.0,0.0}
+\definecolor{codeblue}{rgb}{0.0,0,1.0}
+\definecolor{codeyellow}{rgb}{1.0,0.7,0.0}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codered},
+	keywordstyle=\color{codeblue},
+	numberstyle=\tiny\color{codegreen},
+	stringstyle=\color{codeyellow},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+
+\lstset{style=mystyle}
+\DeclareMathOperator{\atantwo}{arctan2}
+
+\title{Lomb-Scargle Algorithm Documentation}
+\author{Matt James}
+\date{}
+
+\pdfinfo{%
+  /Title    ()
+  /Author   ()
+  /Creator  ()
+  /Producer ()
+  /Subject  ()
+  /Keywords ()
+}
+
+\begin{document}
+\maketitle
+	
+\section{Description of Lomb-Scargle Periodogram}
+
+Everything in this document is pieced together from \citet{Lomb1976,Scargle1983,Hocke1998}. This algorithm will calculate the power, $P$, amplitude, $A$, and phase, $\phi$, of a wave with a given frequency, $f$, within an irregularly sampled time series of length $n$ samples.
+
+Let us consider sinusoidal waves of the form 
+\begin{equation}
+	y_f(t_i) = a \cos{\omega(t_i - \tau)} + b \sin{\omega(t_i - \tau)}, \label{EqWave}
+\end{equation}
+where $\omega = 2 \pi f$ and $1 \le i \le n$.
+
+$\tau$ is defined in \citet{Scargle1983} as
+\begin{equation}
+	\tan{2 \omega \tau} = \frac{\sum_{i=1}^{n} \sin{2 \omega t_i}}{\sum_{i=1}^{n} \cos{2 \omega t_i}},
+\end{equation}
+which can easily be rewritten as
+\begin{equation}
+	\tau = \frac{\atantwo{\left( \sum_{i=1}^{n} \sin{2 \omega t_i}, \sum_{i=1}^{n} \cos{2 \omega t_i} \right)}}{2 \omega}
+\end{equation}
+
+The constants $a$ and $b$ are defined as
+\begin{equation}
+	a = \frac{\sqrt{\frac{2}{n}}\sum_{i=1}^{n}y_i \cos{\omega (t+i - \tau)}}{\left( \sum_{i=1}^{n} \cos^2{\omega (t+i - \tau)} \right)^{\frac{1}{2}}}
+\end{equation}
+and
+\begin{equation}
+b = \frac{\sqrt{\frac{2}{n}}\sum_{i=1}^{n}y_i \sin{\omega (t+i - \tau)}}{\left( \sum_{i=1}^{n} \sin^2{\omega (t+i - \tau)} \right)^{\frac{1}{2}}}.
+\end{equation}
+
+The periodogram is calculated using 
+\begin{equation}
+	P(\omega) = \frac{1}{2\sigma^2}\frac{n}{2} (a^2 + b^2),
+\end{equation}
+where $\sigma = \frac{1}{n-1}\sum_{i=1}^{n} y_i^2$ is the variance (assuming that the mean has been subtracted from the data already).
+
+The amplitude is calculated using 
+\begin{equation}
+	A(\omega) = \sqrt{\frac{4\sigma^2}{n}P(\omega)}
+\end{equation}
+or, equivalently,
+\begin{equation}
+	A(\omega) = \sqrt{a^2 + b^2}.
+\end{equation}
+
+Equation \ref{EqWave} can be expressed differently:
+\begin{equation}
+	y_f(t_i) = A(\omega) \cos{\left[\omega (t_i - \tau) + \phi \right]},
+\end{equation}
+where the wave phase is given by,
+\begin{equation}
+	\phi = -\atantwo(b,a).
+\end{equation}
+
+\section{Example Python Code}
+The code used in this module is based on the following Python code.
+						
+						
+\begin{lstlisting}[language=Python]
+def LSNew(t,x,f):
+	'''
+	Calculates the Lomb-Scargle periodogram using the method defined in
+	Hocke 1998. This method assumes that any mean is removed from the
+	data.
+	'''
+	
+	#preformat the input variables
+	t = np.array([t],dtype='float64').flatten()
+	x = np.array([x],dtype='float64').flatten()
+	f = np.array([f],dtype='float64').flatten()
+	
+	#get array sizes
+	nf = np.size(f)
+	n = np.size(t)
+	
+	#create output arrays (Power, amplitude, phase, a, b)
+	P = np.zeros((nf,),dtype='float64')
+	A = np.zeros((nf,),dtype='float64')
+	phi = np.zeros((nf,),dtype='float64')
+	a = np.zeros((nf,),dtype='float64')
+	b = np.zeros((nf,),dtype='float64')
+	
+	#convert f to omega
+	w = 2*np.pi*f
+	
+	#calculate variance (sigma**2)
+	o2 = np.sum(x**2)/(n-1)
+	
+	#loop through each frequency
+	for i in range(0,nf):
+		#calculate sums to get Tau
+		ss2w = np.sum(2*w[i]*t)
+		sc2w = np.sum(2*w[i]*t)
+	
+		#calculate Tau
+		Tau = np.arctan2(ss2w,sc2w)/(2*w[i])
+		
+		#calculate w(t - Tau)
+		wtT = w[i]*(t - Tau)
+		
+		#calculate some more sums
+		syc = np.sum(x*np.cos(wtT))
+		sys = np.sum(x*np.sin(wtT))
+		sc2 = np.sum(np.cos(wtT)**2)
+		ss2 = np.sum(np.sin(wtT)**2)
+	
+		#get a  and b
+		rt2n = np.sqrt(2/n)
+		a[i] = rt2n*syc/np.sqrt(sc2)
+		b[i] = rt2n*sys/np.sqrt(ss2)
+	
+	#calculate the periodogram
+	a2b2 = a**2 + b**2
+	P[:] = (n/(4*o2))*a2b2
+	
+	#calculate amplitude
+	A[:] = np.sqrt(a2b2)
+	
+	#calculate phase
+	phi[:] = -np.arctan2(b,a)
+	
+	return P,A,phi,a,b
+\end{lstlisting}
+\bibliographystyle{agu08}
+\bibliography{references}
+\end{document}

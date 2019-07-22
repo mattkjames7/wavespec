@@ -1,0 +1,22 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+
+\bibitem[{\textit{Hocke}(1998)}]{Hocke1998}
+Hocke, K. (1998), Phase estimation with the lomb-scargle periodogram method,
+  \textit{Ann. Geophys.}, \textit{16}, 356--358.
+
+\bibitem[{\textit{Lomb}(1976)}]{Lomb1976}
+Lomb, N.~R. (1976), Least-squares frequency analysis of unequally spaced data,
+  \textit{Astrophysics and Space Science}, \textit{39}(2), 447--462,
+  \doi{10.1007/BF00648343}.
+
+\bibitem[{\textit{Scargle}(1983)}]{Scargle1983}
+Scargle, J. (1983), Studies in astronomical time series analysis. ii -
+  statistical aspects of spectral analysis of unevenly spaced data, \textit{The
+  Astrophysical Journal}, \textit{263}, \doi{10.1086/160554}.
+
+\end{thebibliography}
