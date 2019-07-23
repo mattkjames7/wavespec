@@ -116,7 +116,7 @@ The code used in this module is based on the following Python code.
 						
 						
 \begin{lstlisting}[language=Python]
-def LSNew(t,x,f):
+def LombScargle(t,x,f):
 	'''
 	Calculates the Lomb-Scargle periodogram using the method defined in
 	Hocke 1998. This method assumes that any mean is removed from the
@@ -148,8 +148,8 @@ def LSNew(t,x,f):
 	#loop through each frequency
 	for i in range(0,nf):
 		#calculate sums to get Tau
-		ss2w = np.sum(2*w[i]*t)
-		sc2w = np.sum(2*w[i]*t)
+		ss2w = np.sum(np.sin(2*w[i]*t))
+		sc2w = np.sum(np.cos(2*w[i]*t))
 	
 		#calculate Tau
 		Tau = np.arctan2(ss2w,sc2w)/(2*w[i])

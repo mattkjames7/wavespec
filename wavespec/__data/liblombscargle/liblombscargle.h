@@ -6,5 +6,5 @@
 using namespace std;
 
 extern "C" {
-	void LombScargle(double *t, double *x, int nt, double *f, int nf, double *P, double *Pha, double *real, double *imag);
+	void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, double *A, double *phi, double *a, double *b);
 }

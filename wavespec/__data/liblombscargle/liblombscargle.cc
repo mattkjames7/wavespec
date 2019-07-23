@@ -1,4 +1,13 @@
 #include "liblombscargle.h"
+
+/* Calculates angular frequency */
+void _angfreq(double *f, int nf, double *w) {
+	int i;
+	for (i=0;i<nf;i++) {
+		w[i] = 2*M_PI*f[i];
+	}
+} 
+
 /* Calculate variance in data array, x, assuming mean has already been
  * subtracted */
 double _variance(double *x, int n) {
@@ -22,7 +31,50 @@ double _tau(double *t, int n, double w) {
 		sc2w += cos(wt);
 	}
 	return atan2(ss2w,sc2w)/(2*w);
-} 
+}
+
+/* Calculates w(t_i - tau) */
+void _wtT(double *t, int n, double w, double tau, double *wtT) {
+	int i;
+	for (i=0;i<n;i++) {
+		//wtT[i] = w*(t[i] - tau);
+		wtT[i] = w*(t[i]);
+	}
+}
+
+/* Calculates cos(w(t_i - tau)) */
+void _coswtT(int n, double *wtT, double *coswtT) {
+	int i;
+	for (i=0;i<n;i++) {
+		coswtT[i] = cos(wtT[i]);
+	}
+}
+/* Calculates sin(w(t_i - tau)) */
+void _sinwtT(int n, double *wtT, double *sinwtT) {
+	int i;
+	for (i=0;i<n;i++) {
+		sinwtT[i] = sin(wtT[i]);
+	}
+}
+
+
+ 
+/* Calculates the summations used for working out a and b*/
+void _sums(double *x, int n, double *coswtT, double *sinwtT, double *syc, double *sys, double *sc2, double *ss2) {
+	int i;
+	syc[0] = 0.0;
+	sys[0] = 0.0;
+	sc2[0] = 0.0;
+	ss2[0] = 0.0;
+	for (i=0;i<n;i++) {
+		syc[0] += x[i]*coswtT[i];
+		sys[0] += x[i]*sinwtT[i];
+		sc2[0] += coswtT[i]*coswtT[i];
+		ss2[0] += sinwtT[i]*sinwtT[i];
+	}
+}
+
+
 
 /* Basic Lomb Scargle analysis with additional phase calculation
  * 
@@ -41,45 +93,57 @@ double _tau(double *t, int n, double w) {
  * b		Parameter b, length nf
  */
 void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, double *A, double *phi, double *a, double *b) {
+	/*create some variables*/
 	int i,j;
-	double c,s,xc,xs,cc,ss,cs,tau,c_tau,s_tau,c_tau2,s_tau2,cs_tau,w;
+	double *w = new double[nf];
+	double *wtT = new double[nf];
+	double *coswtT = new double[nf];
+	double *sinwtT = new double[nf];
+	double o2;
+	double tau;
+	double syc, sys, sc2, ss2;
+	double rt2n = sqrt(2.0/n);
+	double a2b2;
 	
+	/*Convert frequency (Hz) to angular frequency, omega (rad/s)*/
+	_angfreq(f,nf,w);
+	
+	/* Calculate variance in data set */
+	o2 = _variance(x,n);
+	
+	/* Loop through each frequency */
 	for (i=0;i<nf;i++) {
-		xc = 0.0;
-		xs = 0.0;
-		cc = 0.0;
-		ss = 0.0;
-		cs = 0.0;
+		/* Get tau and then w*(t[i] - tau)*/
+		tau = _tau(t,n,w[i]);
+		_wtT(t,n,w[i],tau,wtT);
+	
+		/* Calculate sine and cosine of w*(t[i] - tau) */
+		_sinwtT(n,wtT,sinwtT);
+		_coswtT(n,wtT,coswtT);
+	
+		/* calculate sums */
+		_sums(x,n,coswtT,sinwtT,&syc,&sys,&sc2,&ss2);
 		
-		w = 2.0*M_PI*f[i];
+		/* a and b */
+		a[i] = rt2n*syc/sqrt(sc2);
+		b[i] = rt2n*sys/sqrt(ss2);
 		
-		for (j=0;j<nt;j++) {
-			c = cos(w*t[j]);
-			s = sin(w*t[j]);
-			
-			xc += x[j]*c;
-			xs += x[j]*s;
-			cc += c*c;
-			ss += s*s;
-			cs += c*s;
-		}
+		/* Periodogram */
+		a2b2 = a[i]*a[i] + b[i]*b[i];
+		P[i] = a2b2*((double) n)/(4.0*o2);
 		
-		//printf("%f %f %f %f %f\n",xc,xs,cc,ss,cs);
+		/* Amplitude */
+		A[i] = sqrt(a2b2);
 		
-		tau = atan2(2.0*cs,cc-ss)/(2.0*w);
-		c_tau = cos(w*tau);
-		s_tau = sin(w*tau);
-		c_tau2 = c_tau*c_tau;
-		s_tau2 = s_tau*s_tau;
-		cs_tau = c_tau*s_tau;
-		
-		real[i] = xc;
-		imag[i] = -xs;
-		
-		P[i] = 0.5*((pow(c_tau*xc + s_tau*xs,2.0)/(c_tau2*cc + cs_tau*cs + s_tau2*ss)) + (pow(c_tau*xs - s_tau*xc,2.0)/(c_tau2*ss - cs_tau*cs + s_tau2*cc)));
-		Pha[i] = atan2(-xs,xc)*180.0/M_PI;
-		
+		/* Phase */
+		phi[i] = -atan2(b[i],a[i]);
 	}
+	
+	/* Deallocate arrays */
+	delete w;
+	delete wtT;
+	delete sinwtT;
+	delete coswtT;
 	
 }
 
