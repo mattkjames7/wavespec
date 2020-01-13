@@ -96,9 +96,9 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 	/*create some variables*/
 	int i,j;
 	double *w = new double[nf];
-	double *wtT = new double[nf];
-	double *coswtT = new double[nf];
-	double *sinwtT = new double[nf];
+	double *wtT = new double[n];
+	double *coswtT = new double[n];
+	double *sinwtT = new double[n];
 	double o2;
 	double tau;
 	double syc, sys, sc2, ss2;
