@@ -1,6 +1,6 @@
 import numpy as np
 
-def ApplyWindowFunction(v,WindowFunction=None,Params=None):
+def ApplyWindowFunction(v,WindowFunction=None,Param=None):
 
 	# get the appropriate window function and parameters
 	WF = {	'none':				(_WFNone,0.0),
@@ -15,13 +15,13 @@ def ApplyWindowFunction(v,WindowFunction=None,Params=None):
 			'cosine':			(_WFCosine,10.0),
 			'gaussian':			(_WFGaussian,0.5)}
 	
-	Func,Pdef = WF.get(WindowFunction,0.0)
+	Func,Pdef = WF.get(WindowFunction,(_WFNone,0.0))
 	
 	#check if anycustom parametersare being used
-	if Params is None:
+	if Param is None:
 		P = Pdef
 	else:
-		P = Params
+		P = Param
 	
 	#apply to data
 	return Func(v,P)

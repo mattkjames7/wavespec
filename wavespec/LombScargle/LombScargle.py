@@ -1,5 +1,6 @@
 import numpy as np
 from ._CFunctions import _CLombScargle
+from ..Tools.WindowFunctions import ApplyWindowFunction
 
 def _PyLombScargle(t,x,f):
 	
@@ -56,7 +57,7 @@ def _PyLombScargle(t,x,f):
 	return P,A,phi,a,b
 
 
-def LombScargle(t,x,f,Backend='C++'):
+def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None):
 	'''
 	Calcualtes the Lomb-Scargle periodogram for an irregularly spaced 
 	time series.
@@ -66,6 +67,13 @@ def LombScargle(t,x,f,Backend='C++'):
 	t: 		time array in seconds, length n
 	x: 		data array, length n
 	f: 		array of frequencies to determine periodogram at, length nf
+	Backend: 'C++' or 'Python'
+	WindowFunction : Select a window function to apply to the data before 
+			the transform, the options are: 'none','cosine-bell','hamming',
+			'triangle','welch','blackman','nuttall','blackman-nuttall',
+			'flat-top','cosine','gaussian'
+	Param: This parameter is used to alter some of the window functions
+			(see WindowFunctions.py).
 	
 	Returns
 	=======
@@ -79,8 +87,9 @@ def LombScargle(t,x,f,Backend='C++'):
 	
 	#preformat the input variables
 	t = np.array([t],dtype='float64').flatten()
-	x = np.array([x],dtype='float64').flatten()
+	x = np.array([x0],dtype='float64').flatten()
 	f = np.array([f],dtype='float64').flatten()
+	x = ApplyWindowFunction(x,WindowFunction,Param)
 	
 	if Backend == 'C++':
 		#get array sizes
