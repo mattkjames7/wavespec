@@ -63,7 +63,7 @@ def Polarization2D(xPow,xPha,yPow,yPha):
 	
 	#hopefully this bit will correctly define the direction (handedness) 
 	#of the wave around the z axis
-	direction = -np.sign(((delta + np.pi/2.0) % np.pi) - np.pi/2.0)
+	direction = np.sign(((delta % (2*np.pi)))-np.pi)
 	
 	
 	return (Ax,Ay,Axi,Aeta,psi,e,direction)	
