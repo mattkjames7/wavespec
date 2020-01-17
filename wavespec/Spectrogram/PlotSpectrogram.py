@@ -12,7 +12,7 @@ def _mode(x):
 	
 
 
-def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None,Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz'):
+def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz'):
 	'''
 	Plots a spectrogram by calling the "Spectrogram" routine which
 	creates a spectogram using a sliding window.
@@ -154,13 +154,13 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		print(tm.shape,fm.shape,Stmp.shape)
 		#plot the section
 		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,vmin=scale[0],vmax=scale[1],norm=norm)
-	
-	if not sm is None:
-		#color bar
-		divider = make_axes_locatable(ax)
-		cax = divider.append_axes("right", size="5%", pad=0.05)
 
-		cbar = fig.colorbar(sm,cax=cax) 
+	#colour bar
+	fig.subplots_adjust(right=0.8)
+	box = ax.get_position()
+	if not sm is None:
+		cax = plt.axes([0.05*box.width + box.x1,box.y0+0.1*box.height,box.width*0.025,box.height*0.8])
+		cbar = fig.colorbar(sm,cax=cax)
 		cbar.set_label(zlabel)
 		
 	return ax,Nw,LenW,Freq,Spec

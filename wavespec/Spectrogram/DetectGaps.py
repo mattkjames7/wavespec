@@ -49,12 +49,15 @@ def DetectGaps(v,GoodData=None):
 			UTi1 = np.array([i-1])
 		else:
 			UTi0 = np.append(UTi0,st)
-			UTi1 = np.append(UTi1,i-1)	
+			UTi1 = np.append(UTi1,i)	
 		st =-1
 		ngd += 1
+	
+	print(ngd,v.size)
 		
 	if ngd == 0:
 		UTi0 = np.array([])
 		UTi1 = np.array([])
 		
+	
 	return ngd,UTi0,UTi1

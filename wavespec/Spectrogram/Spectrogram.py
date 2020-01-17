@@ -5,7 +5,7 @@ from .GetWindows import GetWindows
 from ..LombScargle.LombScargle import LombScargle
 from .DetectGaps import DetectGaps
 
-def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None,Quiet=True,LenW=None):
+def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -70,6 +70,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	#detect and gaps in the input data
 	if FindGaps:
 		ngd,Ti0,Ti1 = DetectGaps(v,GoodData)
+		print(Ti0,Ti1,v[-1])
 	else:
 		ngd = 1
 		Ti0 = np.array([0])
@@ -91,7 +92,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	for i in range(0,ngd):
 		if nd > 0:
 			#this bit adds a load of NaNs in a gap in the middle of two good sections
-			out.Tspec[pos] = (Tspec[pos-1] + Tarrays[Ti0[i]] + wind/2.0)/2.0
+			out.Tspec[pos] = (out.Tspec[pos-1] + t[Ti0[i]] + wind/2.0)/2.0
 			pos+=1
 		
 		if Nwind[i] > 0:
