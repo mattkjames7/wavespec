@@ -20,6 +20,7 @@ def DetectGaps(v,GoodData=None):
 	UTi1:	End index of a good section of data.
 	
 	'''
+	Tlen = v.size
 	if GoodData is None:
 		good = np.zeros(Tlen,dtype='bool')
 		gd = np.where(np.isfinite(v))[0]
@@ -51,5 +52,9 @@ def DetectGaps(v,GoodData=None):
 			UTi1 = np.append(UTi1,i-1)	
 		st =-1
 		ngd += 1
+		
+	if ngd == 0:
+		UTi0 = np.array([])
+		UTi1 = np.array([])
 		
 	return ngd,UTi0,UTi1

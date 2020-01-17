@@ -1,6 +1,6 @@
 import numpy as np
 
-def GetWindows(t,wind,slip,ngd,UTi0,UTi1,LenW=None):
+def GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW=None):
 	'''
 	Gets the total nuimber of time windows to transform.
 	
@@ -16,6 +16,7 @@ def GetWindows(t,wind,slip,ngd,UTi0,UTi1,LenW=None):
 			in all windows, otherwise the window length is defined by wind
 	'''
 
+	Res = t[1] - t[0]
 	Tranges = t[Ti1] - t[Ti0]
 	Nwind = np.int32((Tranges - wind)/slip) + 2
 	

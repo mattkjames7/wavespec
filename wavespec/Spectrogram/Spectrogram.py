@@ -3,6 +3,7 @@ from ..Fourier.FFT import FFT
 from scipy.signal import detrend
 from .GetWindows import GetWindows
 from ..LombScargle.LombScargle import LombScargle
+from .DetectGaps import DetectGaps
 
 def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None,Quiet=True,LenW=None):
 	'''
@@ -64,7 +65,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	if Tlen <= 1:
 		return (0,0,0,0,0,0,0,0)
 
-	res = t[1] - t[0]
+	Res = t[1] - t[0]
 
 	#detect and gaps in the input data
 	if FindGaps:
@@ -90,7 +91,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	for i in range(0,ngd):
 		if nd > 0:
 			#this bit adds a load of NaNs in a gap in the middle of two good sections
-			Tspec[pos] = (Tspec[pos-1] + Tarrays[Ti0[i]] + wind/2.0)/2.0
+			out.Tspec[pos] = (Tspec[pos-1] + Tarrays[Ti0[i]] + wind/2.0)/2.0
 			pos+=1
 		
 		if Nwind[i] > 0:
@@ -105,7 +106,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 			
 			#output time array 
 			Tax = np.arange(Nwind[i],dtype='float32')*slip + wind/2.0 + Tt[0]
-			Tspec[pos:pos+Nwind[i]] = Tax
+			out.Tspec[pos:pos+Nwind[i]] = Tax
 			
 			#loop through each window
 			for j in range(0,Nwind[i]):

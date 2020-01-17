@@ -74,6 +74,14 @@ void _sums(double *x, int n, double *coswtT, double *sinwtT, double *syc, double
 	}
 }
 
+double _mean(double *x, int n) {
+	int i;
+	double tmp = 0.0;
+	for (i=0;i<n;i++) {
+		tmp += x[i];
+	}
+	return tmp/((double) n);
+}
 
 
 /* Basic Lomb Scargle analysis with additional phase calculation
@@ -113,31 +121,38 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 	
 	/* Loop through each frequency */
 	for (i=0;i<nf;i++) {
-		/* Get tau and then w*(t[i] - tau)*/
-		tau = _tau(t,n,w[i]);
-		_wtT(t,n,w[i],tau,wtT);
-	
-		/* Calculate sine and cosine of w*(t[i] - tau) */
-		_sinwtT(n,wtT,sinwtT);
-		_coswtT(n,wtT,coswtT);
-	
-		/* calculate sums */
-		_sums(x,n,coswtT,sinwtT,&syc,&sys,&sc2,&ss2);
+		if (f[i] == 0.0) {
+			A[i] = _mean(x,n);
+			phi[i] = NAN;
+			a[i] = NAN;
+			b[i] = NAN;
+		} else {
+			/* Get tau and then w*(t[i] - tau)*/
+			tau = _tau(t,n,w[i]);
+			_wtT(t,n,w[i],tau,wtT);
 		
-		/* a and b */
-		a[i] = rt2n*syc/sqrt(sc2);
-		b[i] = rt2n*sys/sqrt(ss2);
+			/* Calculate sine and cosine of w*(t[i] - tau) */
+			_sinwtT(n,wtT,sinwtT);
+			_coswtT(n,wtT,coswtT);
 		
-		/* Periodogram */
-		a2b2 = a[i]*a[i] + b[i]*b[i];
-		//P[i] = a2b2*((double) n)/(4.0*o2);
-		P[i] = a2b2/4;
-		
-		/* Amplitude */
-		A[i] = sqrt(a2b2);
-		
-		/* Phase */
-		phi[i] = -atan2(b[i],a[i]);
+			/* calculate sums */
+			_sums(x,n,coswtT,sinwtT,&syc,&sys,&sc2,&ss2);
+			
+			/* a and b */
+			a[i] = rt2n*syc/sqrt(sc2);
+			b[i] = rt2n*sys/sqrt(ss2);
+			
+			/* Periodogram */
+			a2b2 = a[i]*a[i] + b[i]*b[i];
+			//P[i] = a2b2*((double) n)/(4.0*o2);
+			P[i] = a2b2/4;
+			
+			/* Amplitude */
+			A[i] = sqrt(a2b2);
+			
+			/* Phase */
+			phi[i] = -atan2(b[i],a[i]);
+		}
 	}
 	
 	/* Deallocate arrays */
