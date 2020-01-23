@@ -78,12 +78,15 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
+	if Method == 'LS':
+		LenW = np.size(Freq)
 	
 	#create the output arrays
 	dtype = [('Tspec','float32'),('Pow','float32',(LenW,)),('Pha','float32',(LenW,)),
 			('Amp','float32',(LenW,)),('Real','float32',(LenW,)),('Imag','float32',(LenW))]
 	out = np.recarray(Nw,dtype=dtype)
-	Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)[0:LenW+1]
+	if Method != 'LS':
+		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)[0:LenW+1]
 	out.fill(np.nan)
 	
 	#loop through each good secion of the time series and FFT/L-S
@@ -112,8 +115,11 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 			#loop through each window
 			for j in range(0,Nwind[i]):
 				#indices for this current window
-				use0 = np.int32(j*slip/Res)
-				use = use0 + np.arange(LenW*2)
+				if Method == 'FFT':
+					use0 = np.int32(j*slip/Res)
+					use = use0 + np.arange(LenW*2)
+				else:
+					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))
 				
 				#this shouldn't really happen, but if the length of the array
 				#doesn't match the indices, or there are dodgy values
