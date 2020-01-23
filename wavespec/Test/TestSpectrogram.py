@@ -44,5 +44,3 @@ def TestSpectrogram():
 	ax2.set_title('LS Spectrogram')
 	ax2.set_xlim(0,1000)
 	
-#	fig.tight_layout()
-	return Nw,LenW,Freq,Spec

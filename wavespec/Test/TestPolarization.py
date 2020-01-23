@@ -11,7 +11,6 @@ def TestPolarization(xPow=2.0,xPhase=0.0,yPow=1.0,yPhase=40.0):
 	
 	Ax,Ay,Axi,Aeta,psi,e,direction = Polarization2D(xPow,xPhase,yPow,yPhase)
 	
-	print(Ax,Ay,Axi,Aeta,psi,e,direction)
 	
 	t = np.arange(361.0)*np.pi*2
 	x = Ax*np.cos(t/360.0 + xPhase)

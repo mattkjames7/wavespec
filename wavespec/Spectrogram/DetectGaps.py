@@ -53,7 +53,6 @@ def DetectGaps(v,GoodData=None):
 		st =-1
 		ngd += 1
 	
-	print(ngd,v.size)
 		
 	if ngd == 0:
 		UTi0 = np.array([])

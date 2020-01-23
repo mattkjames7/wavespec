@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from .Spectrogram import Spectrogram
-from scipy.stats import mode
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from .DetectGaps import DetectGaps
+from ..Tools.UTPlotLabel import UTPlotLabel
 
 def _mode(x):
 	u,c = np.unique(x,return_counts=True)
@@ -83,7 +83,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	
 	
 	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW)
-	print(Spec.size)
+
 	#select the parameter to plot
 	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
 		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
@@ -94,7 +94,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	if TimeAxisUnits == 'h':
 		ts = Spec.Tspec/3600.0
 		xlabel = 'Time (h)'
-	if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
+	elif TimeAxisUnits in ['hh:mm','hh:mm:ss']:
 		ts = Spec.Tspec/3600.0
 		xlabel = 'Time'
 	else:
@@ -151,7 +151,6 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		
 		#mesh the axes
 		tm,fm = np.meshgrid(tax,f)
-		print(tm.shape,fm.shape,Stmp.shape)
 		#plot the section
 		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,vmin=scale[0],vmax=scale[1],norm=norm)
 
@@ -162,5 +161,14 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		cax = plt.axes([0.05*box.width + box.x1,box.y0+0.1*box.height,box.width*0.025,box.height*0.8])
 		cbar = fig.colorbar(sm,cax=cax)
 		cbar.set_label(zlabel)
+		
+	#axis labels
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel('Frequency, $f$ ('+FreqAxisUnits+')')
+		
+	#sort the time axis out
+	if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
+		UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
+		
 		
 	return ax,Nw,LenW,Freq,Spec

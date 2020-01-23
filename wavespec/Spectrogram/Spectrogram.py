@@ -70,7 +70,6 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	#detect and gaps in the input data
 	if FindGaps:
 		ngd,Ti0,Ti1 = DetectGaps(v,GoodData)
-		print(Ti0,Ti1,v[-1])
 	else:
 		ngd = 1
 		Ti0 = np.array([0])
