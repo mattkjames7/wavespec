@@ -20,7 +20,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	Inputs
 	======
 		t : time array in seconds
-		v : array of values the same length as t
+		v : array of values the same length as t (when using crossphase
+			method, set to a tuple or list containing 2 time series arrays)
 	 wind : sliding window length in seconds
 	 slip : difference in time between the start of one window and the 
 			next - when slip < wind, each window will have an overlap,
@@ -28,7 +29,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 			unused and when slip == wind, each window is adjacent in time.
 	 Freq : a list of frequencies (Hz) to solve for - only does anything
 			when using L-S
-	Method : Currently either 'FFT' or 'LS'
+	Method : 'FFT'|'LS'|'CP-FFT'|'CP-LS' - where CP = crossphase,
+			FFT = fast Fourier transform, LS = Lomb-Scargle.
 	WindowFunction : Select a window function to apply to the data before 
 			the transform, the options are: 'none','cosine-bell','hamming',
 			'triangle','welch','blackman','nuttall','blackman-nuttall',
