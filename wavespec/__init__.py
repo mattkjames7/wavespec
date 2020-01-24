@@ -7,3 +7,5 @@ from . import Fourier
 from . import Test
 from . import Spectrogram
 from . import CrossPhase
+from . import Filter
+from . import PCA
