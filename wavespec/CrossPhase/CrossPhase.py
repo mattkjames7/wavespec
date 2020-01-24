@@ -47,13 +47,13 @@ def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None):
 		_,_,Freq,Yr,Yi = FFT(t,y,WindowFunction,Param)
 	elif Method == 'LS':
 		_,_,_,Xr,Xi = LombScargle(t,x,Freq,'C++',WindowFunction,Param)
-		_,_,_,Yr,Yi = LombScargle(t,x,Freq,'C++',WindowFunction,Param)
+		_,_,_,Yr,Yi = LombScargle(t,y,Freq,'C++',WindowFunction,Param)
 	
 	
 	
 	#calculate crossphase power
 	Pxyr = Xr*Yr
-	Pxyi = Xi*(-Yi)
+	Pxyi = -Xi*Yi
 	Pxy = Pxyi**2 + Pxyr**2
 	
 	#calculate phase

@@ -139,13 +139,13 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 			_sums(x,n,coswtT,sinwtT,&syc,&sys,&sc2,&ss2);
 			
 			/* a and b */
-			a[i] = rt2n*syc/sqrt(sc2);
-			b[i] = rt2n*sys/sqrt(ss2);
+			a[i] = 0.5*rt2n*syc/sqrt(sc2);
+			b[i] = 0.5*rt2n*sys/sqrt(ss2);
 			
 			/* Periodogram */
-			a2b2 = a[i]*a[i] + b[i]*b[i];
+			P[i] = a[i]*a[i] + b[i]*b[i];
 			//P[i] = a2b2*((double) n)/(4.0*o2);
-			P[i] = a2b2/4;
+			//P[i] = a2b2;
 			
 			/* Amplitude */
 			A[i] = sqrt(a2b2);

@@ -103,8 +103,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	dt = _mode(ts[1:] - ts[:-1])/2.0
 	
 	#find gaps
-	gaps = np.where(np.isfinite(Spec.Pow[:,0]) == False)[0]
-	ngd,T0,T1 = DetectGaps(Spec.Pow[:,0])
+	gaps = np.where(np.isfinite(Spec.Pow[:,1]) == False)[0]
+	ngd,T0,T1 = DetectGaps(Spec.Pow[:,1])
 	
 
 	

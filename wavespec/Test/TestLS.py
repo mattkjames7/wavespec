@@ -56,4 +56,4 @@ def TestLS(A=[1.0,2.0],f=[0.04,0.1],phi=[0.0,90.0],Backend='C++'):
 	for i in range(0,nlpk//2):
 		ax2.text(0.1,0.9-i*0.1,'$A_{'+'{:d}'.format(i)+'}$='+'{:3.1f}'.format(np.sqrt(P[lpk[i]])*2)+' $f_{'+'{:d}'.format(i)+'}$='+'{:4.2f}'.format(lfreq[lpk[i]])+r' $\phi{'+'{:d}'.format(i)+'}$='+'{:5.1f}'.format(phi[lpk[i]]*180.0/np.pi))
 	
-	
+	return fr,fi,a,b

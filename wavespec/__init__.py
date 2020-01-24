@@ -6,3 +6,4 @@ from . import LombScargle
 from . import Fourier
 from . import Test
 from . import Spectrogram
+from . import CrossPhase

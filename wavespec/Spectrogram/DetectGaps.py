@@ -8,7 +8,8 @@ def DetectGaps(v,GoodData=None):
 	
 	Inputs
 	======
-	v:	Input time series.
+	v:	Input time series. If using crossphase, v should be a tuple or
+		list containing two arrays.
 	GoodData: Optional - When set to None, it is ignored, gaps in v are
 		assumed to be not finite, otherwise set it to a Boolean array
 		the same length as v, where True is good and False is bad.
@@ -20,10 +21,17 @@ def DetectGaps(v,GoodData=None):
 	UTi1:	End index of a good section of data.
 	
 	'''
-	Tlen = v.size
+	
+	if isinstance(v,tuple) or isinstance(v,list):
+		Tlen = v[0].size
+		gd = np.where(np.isfinite(v[0]) & np.isfinite(v[1]))[0]
+	else:		
+		Tlen = v.size
+		gd = np.where(np.isfinite(v))[0]
+		
+		
 	if GoodData is None:
 		good = np.zeros(Tlen,dtype='bool')
-		gd = np.where(np.isfinite(v))[0]
 		good[gd] = True
 	else:
 		good = GoodData

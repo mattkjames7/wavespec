@@ -4,6 +4,7 @@ from scipy.signal import detrend
 from .GetWindows import GetWindows
 from ..LombScargle.LombScargle import LombScargle
 from .DetectGaps import DetectGaps
+from ..CrossPhase.CrossPhase import CrossPhase
 
 def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None):
 	'''
@@ -12,7 +13,8 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	Inputs
 	======
 		t : time array in seconds
-		v : array of values the same length as t
+		v : array of values the same length as t. If using crossphase,
+			this should be a list or tuple containing two arrays.
 	 wind : sliding window length in seconds
 	 slip : difference in time between the start of one window and the 
 			next - when slip < wind, each window will have an overlap,
@@ -54,8 +56,12 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 				Real : Real component at each frequency in each window, shape (Nw,LenW)
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''
+	isLS = 'LS' in Method
+	isCP = 'CP' in Method
+
+
 	#check that the frequencies exist if we are using LS
-	if Freq is None and Method == 'LS':
+	if Freq is None and isLS:
 		print('Please set the Freq keyword before using the LS method')
 		return
 
@@ -77,14 +83,15 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
-	if Method == 'LS':
+
+	if isLS:
 		LenW = np.size(Freq)
 	
 	#create the output arrays
 	dtype = [('Tspec','float32'),('Pow','float32',(LenW,)),('Pha','float32',(LenW,)),
 			('Amp','float32',(LenW,)),('Real','float32',(LenW,)),('Imag','float32',(LenW))]
 	out = np.recarray(Nw,dtype=dtype)
-	if Method != 'LS':
+	if not isLS:
 		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)[0:LenW+1]
 	out.fill(np.nan)
 	
@@ -104,7 +111,13 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 			good = np.arange(ng) + Ti0[i]
 			
 			#copy the subarrays for time and v
-			Tv = v[good]
+			if isCP:
+				Tv0 = v[0][good]
+				Tv1 = v[1][good]
+				nTv = Tv0.size
+			else:
+				Tv = v[good]
+				nTv = Tv.size
 			Tt = t[good]
 			
 			#output time array 
@@ -114,33 +127,48 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 			#loop through each window
 			for j in range(0,Nwind[i]):
 				#indices for this current window
-				if Method == 'FFT':
+				if isLS:
+					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))
+				else:
 					use0 = np.int32(j*slip/Res)
 					use = use0 + np.arange(LenW*2)
-				else:
-					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))
-				
+								
 				#this shouldn't really happen, but if the length of the array
 				#doesn't match the indices, or there are dodgy values
-				if np.max(use) >= np.size(Tv):
+				if np.max(use) >= nTv:
 					bad = True
 				else:
-					bad = (np.isfinite(Tv) == False).any()
-					
+					if isCP:
+						bad = ((np.isfinite(Tv0) == False) | (np.isfinite(Tv1) == False)).any()
+					else:
+						bad = (np.isfinite(Tv) == False).any()
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
 					#detrend if necessary
-					if Detrend:
-						Tvu = detrend(Tv[use])
-					else:
-						Tvu = Tv[use]
+					if isCP:
+						if Detrend:
+							Tvu0 = detrend(Tv0[use])
+							Tvu1 = detrend(Tv1[use])
+						else:
+							Tvu0 = Tv0[use]
+							Tvu1 = Tv1[use]
+					else:	
+						if Detrend:
+							Tvu = detrend(Tv[use])
+						else:
+							Tvu = Tv[use]
 					
 					if Method == 'FFT':
 						power,phase,freq,fr,fi = FFT(Tt[use],Tvu,WindowFunction,Param)
 						amp = np.sqrt(power)
 					elif Method == 'LS':
 						power,amp,phase,fr,fi = LombScargle(Tt[use],Tvu,Freq,'C++',WindowFunction,Param)
+					elif Method == 'CP-FFT':
+						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param)
+					elif Method == 'CP-LS':
+						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'LS',WindowFunction,Param)
 					
+
 					out.Pow[j+pos] = power[0:LenW]
 					out.Pha[j+pos] = phase[0:LenW]
 					out.Amp[j+pos] = amp[0:LenW]
