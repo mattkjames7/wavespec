@@ -60,6 +60,11 @@ def Filter(data,inter,high=None,low=None,KeepDC=False):
 	Returns:
 		Filtered time series.
 	'''
+	if high is None:
+		high = inter
+	if low is None:
+		low = inter
+	
 	
 	#find bad data
 	bad = np.where(np.logical_not(np.isfinite(data)))[0]
@@ -83,8 +88,8 @@ def Filter(data,inter,high=None,low=None,KeepDC=False):
 
 
 	#perform low-pass filter
-	if (not low is None) or (low > inter):
-		fltr = MakeFilter(np.float(low),1.0/np.float(inter),ftype='low')
+	if (low > inter):
+		fltr = _MakeFilter(np.float(low),1.0/np.float(inter),ftype='low')
 		if not fltr is None:
 			tmpdata = convolve(tmpdata,fltr)
 
@@ -97,7 +102,7 @@ def Filter(data,inter,high=None,low=None,KeepDC=False):
 
 
 	#perform high-pass filter
-	if (if not high is None) or (high > inter):
+	if (high > inter):
 		fltr = _MakeFilter(np.float(high),1.0/np.float(inter),ftype='high')
 		if not fltr is None:
 			tmpdata = convolve(tmpdata,fltr)		
