@@ -114,7 +114,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	if FreqAxisUnits == 'Hz':
 		f = Freq
 	elif FreqAxisUnits == 'mHz':
-		f = Freq/1000.0
+		f = Freq*1000.0
 	else:
 		print('Frequency axis units {:s} not recognised, defaulting to "Hz"'.format(FreqAxisUnits))
 		f = Freq
