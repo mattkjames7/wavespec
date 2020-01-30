@@ -61,9 +61,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 
 
 	#check that the frequencies exist if we are using LS
-	if Freq is None and isLS:
-		print('Please set the Freq keyword before using the LS method')
-		return
+	#if Freq is None and isLS:
 
 
 	#find out the length of the array and 
@@ -71,7 +69,13 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	if Tlen <= 1:
 		return (0,0,0,0,0,0,0,0)
 
-	Res = t[1] - t[0]
+	if isLS:
+		#we need frequencies here, so we will assume that the data are
+		#evenly spaced and that we can use the FFT frequencies
+		dt,ct = np.unique((t[1:]-t[:-1]),return_counts=True)
+		Res = dt[ct.argmax()]		
+	else:
+		Res = t[1] - t[0]
 
 	#detect and gaps in the input data
 	if FindGaps:
@@ -83,16 +87,21 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
+	if isLS and not Freq is None:
+		LenW = np.size(Freq)//2
+	elif isLS and Freq is None:
+		LenW = np.int32(wind/Res)//2
+	if not isLS or (isLS and (Freq is None)):
+		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)
 
-	if isLS:
-		LenW = np.size(Freq)
+		
 	
 	#create the output arrays
 	dtype = [('Tspec','float32'),('Pow','float32',(LenW,)),('Pha','float32',(LenW,)),
 			('Amp','float32',(LenW,)),('Real','float32',(LenW,)),('Imag','float32',(LenW))]
 	out = np.recarray(Nw,dtype=dtype)
-	if not isLS:
-		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)[0:LenW+1]
+
+
 	out.fill(np.nan)
 	
 	#loop through each good secion of the time series and FFT/L-S

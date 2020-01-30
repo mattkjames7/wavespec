@@ -105,7 +105,7 @@ def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None):
 		
 		#Call the C++ function
 		_CLombScargle(t,x,n,f,nf,P,A,phi,a,b)
-		
+
 		#return result
 		return P,A,phi,a,b
 	else:

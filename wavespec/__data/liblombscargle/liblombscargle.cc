@@ -148,7 +148,7 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 			//P[i] = a2b2;
 			
 			/* Amplitude */
-			A[i] = sqrt(a2b2);
+			A[i] = sqrt(P[i]);
 			
 			/* Phase */
 			phi[i] = -atan2(b[i],a[i]);

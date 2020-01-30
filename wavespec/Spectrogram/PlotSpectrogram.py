@@ -12,7 +12,7 @@ def _mode(x):
 	
 
 
-def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz'):
+def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz',nox=False):
 	'''
 	Plots a spectrogram by calling the "Spectrogram" routine which
 	creates a spectogram using a sliding window.
@@ -140,7 +140,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		fig = plt
 		fig.figure()
 	ax = fig.subplot2grid((maps[1],maps[0]),(maps[3],maps[2]))
-	cmap = plt.cm.get_cmap('gnuplot2')
+	cmap = plt.cm.get_cmap('gnuplot')
 	
 	
 	#loop through each good section
@@ -166,11 +166,15 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		
 	#axis labels
 	ax.set_xlabel(xlabel)
-	ax.set_ylabel('Frequency, $f$ ('+FreqAxisUnits+')')
+	ax.set_ylabel('$f$ ('+FreqAxisUnits+')')
 		
 	#sort the time axis out
-	if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
-		UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
-		
-		
+	if nox:
+		ax.xaxis.set_visible(False)
+	else:
+		if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
+			UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
+			ax.set_xlabel('UT')	
+
+			
 	return ax,Nw,LenW,Freq,Spec

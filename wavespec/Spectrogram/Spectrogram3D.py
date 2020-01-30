@@ -4,9 +4,9 @@ from .Spectrogram import Spectrogram
 def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None):
 
 	#check that the frequencies exist if we are using LS
-	if Freq is None and Method == 'LS':
-		print('Please set the Freq keyword before using the LS method')
-		return
+	#if Freq is None and Method == 'LS':
+	#	print('Please set the Freq keyword before using the LS method')
+	#	return
 
 
 
@@ -36,9 +36,12 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 	#now fill it up
 	names = xt.dtype.names
 	for n in names:
-		out['x'+n] = xt[n]
-		out['y'+n] = yt[n]
-		out['z'+n] = zt[n]
+		if not n == 'Tspec':
+			out['x'+n] = xt[n]
+			out['y'+n] = yt[n]
+			out['z'+n] = zt[n]
+
+	out.Tspec = xt.Tspec
 	out.kx = kx
 	out.ky = ky
 	out.kz = kz

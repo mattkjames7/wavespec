@@ -9,3 +9,5 @@ from . import Spectrogram
 from . import CrossPhase
 from . import Filter
 from . import PCA
+from . import DetectWaves
+from . import Tools
