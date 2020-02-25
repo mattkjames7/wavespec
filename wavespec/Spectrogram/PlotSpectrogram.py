@@ -86,6 +86,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	
 	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW)
 
+	
+
 	#select the parameter to plot
 	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
 		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
@@ -104,6 +106,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		xlabel = 'Time (s)'
 	dt = _mode(ts[1:] - ts[:-1])/2.0
 	
+	
 	#find gaps
 	gaps = np.where(np.isfinite(Spec.Pow[:,1]) == False)[0]
 	ngd,T0,T1 = DetectGaps(Spec.Pow[:,1])
@@ -112,12 +115,12 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	
 	#set the frequency
 	if FreqAxisUnits == 'Hz':
-		f = Freq
+		f = Freq[:LenW+1]
 	elif FreqAxisUnits == 'mHz':
-		f = Freq*1000.0
+		f = Freq[:LenW+1]*1000.0
 	else:
 		print('Frequency axis units {:s} not recognised, defaulting to "Hz"'.format(FreqAxisUnits))
-		f = Freq
+		f = Freq[:LenW+1]
 	
 	#set the z (colour) scale
 	zunits = { 'Pow' : 'Power',
@@ -150,6 +153,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 		use = np.arange(T0[i],T1[i]+1)
 		tax = np.append(ts[use]-dt,ts[use[-1]]+dt)
 		Stmp = S[use]
+		
 		
 		#mesh the axes
 		tm,fm = np.meshgrid(tax,f)

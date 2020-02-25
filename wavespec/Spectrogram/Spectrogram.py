@@ -94,7 +94,6 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	if not isLS or (isLS and (Freq is None)):
 		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)
 
-		
 	
 	#create the output arrays
 	dtype = [('Tspec','float32'),('Pow','float32',(LenW,)),('Pha','float32',(LenW,)),
