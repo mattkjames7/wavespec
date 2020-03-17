@@ -92,7 +92,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 	elif isLS and Freq is None:
 		LenW = np.int32(wind/Res)//2
 	if not isLS or (isLS and (Freq is None)):
-		Freq = ((np.arange(LenW*2+1,dtype='float32')/(LenW*2))/Res)
+		Freq = np.arange(LenW*2+1,dtype='float32')/(LenW*2*Res)
 
 	
 	#create the output arrays
