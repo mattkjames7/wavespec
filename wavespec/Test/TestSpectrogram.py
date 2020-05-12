@@ -31,16 +31,20 @@ def TestSpectrogram():
 	yls[550:560] = np.nan
 	
 	fig = plt
-	fig.figure(figsize=(8,8))
-	ax0 = plt.subplot2grid((3,1),(0,0))
+	fig.figure(figsize=(8,11))
+	ax0 = plt.subplot2grid((4,1),(0,0))
 	ax0.plot(t,y,color=[1.0,0.0,0.0])
 	ax0.plot(tls,yls,color=[1.0,0.5,0.0])
 	ax0.set_xlim(0,1000)
-	fig.subplots_adjust(right=0.8,hspace=0.3)
-	ax1,_,_,freq,_ = PlotSpectrogram(t,y,90.0,6.0,Method='FFT',fig=fig,maps=[1,3,0,1])
+	fig.subplots_adjust(right=0.9,hspace=0.4,top=0.95,bottom=0.05)
+	ax1,_,LenW,freq,_ = PlotSpectrogram(t,y,90.0,6.0,Method='FFT',fig=fig,maps=[1,4,0,1],OneSided=False)
 	ax1.set_title('FFT Spectrogram')
 	ax1.set_xlim(0,1000)
-	ax2,Nw,LenW,Freq,Spec = PlotSpectrogram(tls,yls,90.0,6.0,Freq=freq,Method='LS',fig=fig,maps=[1,3,0,2])
+	ax2,Nw,LenW,Freq,Spec = PlotSpectrogram(t,y,90.0,6.0,Freq=freq[:-1],Method='LS',fig=fig,maps=[1,4,0,2],OneSided=False)
 	ax2.set_title('LS Spectrogram')
 	ax2.set_xlim(0,1000)
+	
+	ax3,Nw,LenW,Freq,Spec = PlotSpectrogram(tls,yls,90.0,6.0,Freq=freq[:-1],Method='LS',fig=fig,maps=[1,4,0,3],OneSided=False)
+	ax3.set_title('LS Spectrogram (Irregular Data)')
+	ax3.set_xlim(0,1000)
 	

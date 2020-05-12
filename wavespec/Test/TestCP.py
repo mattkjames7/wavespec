@@ -32,8 +32,8 @@ def TestCP(f=0.08,phi=[0.0,50.0],Backend='C++'):
 	ax0.legend()
 
 	#fft
-	power0,phase0,freq,fr,fi = FFT(t,y[0])
-	power1,phase1,freq,fr,fi = FFT(t,y[1])
+	power0,amp0,phase0,fr,fi,freq = FFT(t,y[0])
+	power1,amp1,phase1,fr,fi,freq = FFT(t,y[1])
 
 
 	#CP

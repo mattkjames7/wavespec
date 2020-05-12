@@ -12,7 +12,11 @@ def _mode(x):
 	
 
 
-def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz',nox=False):
+def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
+					Param=None,Detrend=True,FindGaps=True,GoodData=None,
+					Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',
+					scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz',
+					nox=False,Threshold=0.0,Fudge=False,OneSided=True):
 	'''
 	Plots a spectrogram by calling the "Spectrogram" routine which
 	creates a spectogram using a sliding window.
@@ -66,7 +70,20 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	zlog : Set to True for a logarithmic color scale
 	TimeAxisUnits : Units of the time axis 's'|'h'|'hh:mm'|'hh:mm:ss'
 	FreqAxisUnits : 'Hz'|'mHz' - units to use along frequency axis
-	
+	Threshold:	If set to a value above 0, then all values which 
+			correspond to frequencies where the amplitude is less than
+			Threshold are set to 0, effectively removing noise from the
+			spectra.
+	Fudge:	(LS Only!)
+			This applies a fudge for when f == Nyquist frequency, because
+			small floating point numbers have relatively large errors.
+			This should only be needed if intending to reproduce a
+			two-sided FFT (also, if doing this then divide A by 2 and P 
+			by 4).
+	OneSided: (FFT Only!)
+			This should be set to remove the negative frequencies in
+			the second half of the spectra. In doing so, the amplitudes
+			are doubled and the powers are quadrupled.	
 	
 	Returns
 	=======
@@ -84,9 +101,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	'''	
 	
 	
-	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW)
-
-	
+	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+	Nf = Freq.size - 1
 
 	#select the parameter to plot
 	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
@@ -115,12 +131,12 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Par
 	
 	#set the frequency
 	if FreqAxisUnits == 'Hz':
-		f = Freq[:LenW+1]
+		f = Freq[:Nf+1]
 	elif FreqAxisUnits == 'mHz':
-		f = Freq[:LenW+1]*1000.0
+		f = Freq[:Nf+1]*1000.0
 	else:
 		print('Frequency axis units {:s} not recognised, defaulting to "Hz"'.format(FreqAxisUnits))
-		f = Freq[:LenW+1]
+		f = Freq[:Nf+1]
 	
 	#set the z (colour) scale
 	zunits = { 'Pow' : 'Power',

@@ -1,7 +1,7 @@
 import numpy as np
 from ..Tools.WindowFunctions import ApplyWindowFunction
 
-def FFT(t,x,WindowFunction=None,Param=None):
+def FFT(t,x,WindowFunction=None,Param=None,Threshold=0.0,OneSided=False):
 	'''
 	Performs a Fast Fourier Transform (FFT) on time series data.
 	
@@ -15,14 +15,22 @@ def FFT(t,x,WindowFunction=None,Param=None):
 			'flat-top','cosine','gaussian'			
 	Param : This parameter is used to alter some of the window functions
 			(see WindowFunctions.py).
-			
+	Threshold:	If set to a value above 0, then all values which 
+			correspond to frequencies where the amplitude is less than
+			Threshold are set to 0, effectively removing noise from the
+			spectra.
+	OneSided: This should be set to remove the negative frequencies in
+			the second half of the spectra. In doing so, the amplitudes
+			are doubled and the powers are quadrupled.
+						
 	Returns
 	=======
 	power: array of powers for each frequency
+	A: array of amplitudes
 	phase: array of phases for each frequency
-	freq: array of frequencies
 	fr: real component of the FFT
 	fi: imaginary component of the FFT
+	freq: array of frequencies
 	'''
 	
 	#find out the array length (l) and the interval between each value (i)
@@ -37,13 +45,33 @@ def FFT(t,x,WindowFunction=None,Param=None):
 	fi = np.imag(f)
 	fr = np.real(f)
 
-	#calculate power
-	power = (fi**2 + fr**2)
-	
 	#frequency
 	freq = np.arange(l+1,dtype='float32')/(np.float32(l*i))
+
+	#Amplitude
+	A = np.abs(f)
+	
+	if Threshold > 0.0:
+		#set everything with A < Threshold to 0 to remove noise
+		bad = np.where(A < Threshold)[0]
+		A[bad] = 0.0
+		fr[bad] = 0.0
+		fi[bad] = 0.0
+
+	if OneSided:
+		#reduce size of the arrays
+		freq = freq[:l//2 + 1]
+		fr = fr[:l//2]
+		fi = fi[:l//2]
+		A = A[:l//2]
+		
+		#multiply amplitudes by 2 except for DC
+		A[1:] *= 2.0
+	
+	#calculate power
+	power = A**2
 	
 	#phase in radians
 	phase = np.arctan2(fi,fr)
 	
-	return (power,phase,freq,fr,fi)
+	return (power,A,phase,fr,fi,freq)

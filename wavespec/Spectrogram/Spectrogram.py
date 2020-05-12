@@ -6,7 +6,9 @@ from ..LombScargle.LombScargle import LombScargle
 from .DetectGaps import DetectGaps
 from ..CrossPhase.CrossPhase import CrossPhase
 
-def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=True,GoodData=None,Quiet=True,LenW=None):
+def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
+				Param=None,Detrend=True,FindGaps=True,GoodData=None,
+				Quiet=True,LenW=None,Threshold=0.0,Fudge=False,OneSided=True):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -38,10 +40,24 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 			if set to None, then any non-finite data is assumed to be bad.
 	Quiet : When set to True, the function produces no stdout output; when
 			False, stdout shows the progress.
-	LenW : This can be set to an integer value in order to for a specific
+	LenW : This can be set to an integer value in order to force a specific
 			window length (the number of elements, as opposed to the length
 			in time defined using wind)
-			
+	Threshold:	If set to a value above 0, then all values which 
+			correspond to frequencies where the amplitude is less than
+			Threshold are set to 0, effectively removing noise from the
+			spectra.
+	Fudge:	(LS Only!)
+			This applies a fudge for when f == Nyquist frequency, because
+			small floating point numbers have relatively large errors.
+			This should only be needed if intending to reproduce a
+			two-sided FFT (also, if doing this then divide A by 2 and P 
+			by 4).
+	OneSided: (FFT Only!)
+			This should be set to remove the negative frequencies in
+			the second half of the spectra. In doing so, the amplitudes
+			are doubled and the powers are quadrupled.
+									
 	Returns
 	=======
 	Nw : Total number of time windows in the output array
@@ -87,17 +103,20 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
-	if isLS and not Freq is None:
-		LenW = np.size(Freq)//2
-	elif isLS and Freq is None:
-		LenW = np.int32(wind/Res)//2
-	if not isLS or (isLS and (Freq is None)):
-		Freq = np.arange(LenW*2+1,dtype='float32')/(LenW*2*Res)
-
+	
+	#find the number of frequencies
+	if Freq is None or not isLS:
+		Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
+		if OneSided or isLS:
+			Freq = Freq[:LenW//2 + 1]
+	elif not Freq is None and isLS:
+		df = Freq[-1] - Freq[-2]
+		Freq = np.append(Freq,Freq[-1] + np.abs(df))
+	Nf = Freq.size - 1		
 	
 	#create the output arrays
-	dtype = [('Tspec','float32'),('Pow','float32',(LenW,)),('Pha','float32',(LenW,)),
-			('Amp','float32',(LenW,)),('Real','float32',(LenW,)),('Imag','float32',(LenW))]
+	dtype = [('Tspec','float32'),('Pow','float32',(Nf,)),('Pha','float32',(Nf,)),
+			('Amp','float32',(Nf,)),('Real','float32',(Nf,)),('Imag','float32',(Nf))]
 	out = np.recarray(Nw,dtype=dtype)
 
 
@@ -139,7 +158,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))
 				else:
 					use0 = np.int32(j*slip/Res)
-					use = use0 + np.arange(LenW*2)
+					use = use0 + np.arange(LenW)
 								
 				#this shouldn't really happen, but if the length of the array
 				#doesn't match the indices, or there are dodgy values
@@ -167,21 +186,20 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=N
 							Tvu = Tv[use]
 					
 					if Method == 'FFT':
-						power,phase,freq,fr,fi = FFT(Tt[use],Tvu,WindowFunction,Param)
-						amp = np.sqrt(power)
+						power,amp,phase,fr,fi,freq = FFT(Tt[use],Tvu,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
 					elif Method == 'LS':
-						power,amp,phase,fr,fi = LombScargle(Tt[use],Tvu,Freq,'C++',WindowFunction,Param)
+						power,amp,phase,fr,fi = LombScargle(Tt[use],Tvu,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
 					elif Method == 'CP-FFT':
-						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param)
+						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					elif Method == 'CP-LS':
-						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'LS',WindowFunction,Param)
+						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					
 
-					out.Pow[j+pos] = power[0:LenW]
-					out.Pha[j+pos] = phase[0:LenW]
-					out.Amp[j+pos] = amp[0:LenW]
-					out.Real[j+pos] = fr[0:LenW]
-					out.Imag[j+pos] = fi[0:LenW]
+					out.Pow[j+pos] = power[0:Nf]
+					out.Pha[j+pos] = phase[0:Nf]
+					out.Amp[j+pos] = amp[0:Nf]
+					out.Real[j+pos] = fr[0:Nf]
+					out.Imag[j+pos] = fi[0:Nf]
 				if not Quiet:
 					print('\r{:6.2f}%'.format(100.0*np.float32(pos+j+1)/Nw),end='')
 	

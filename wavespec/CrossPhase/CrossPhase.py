@@ -3,7 +3,7 @@ from ..LombScargle.LombScargle import LombScargle
 from ..Fourier.FFT import FFT
 
 
-def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None):
+def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Threshold=0.0,Fudge=False,OneSided=False):
 	'''
 	This procedure will perform crossphase analysis of two time series
 	using the method described in Waters et al., 1991 
@@ -25,7 +25,21 @@ def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None):
 	Method:	'LS' or 'FFT'
 	WindowFunction:	Define the window function to be used on both time series
 	Param:	Window function parameter.
-	
+	Threshold:	If set to a value above 0, then all values which 
+			correspond to frequencies where the amplitude is less than
+			Threshold are set to 0, effectively removing noise from the
+			spectra.
+	Fudge:	(LS Only!)
+			This applies a fudge for when f == Nyquist frequency, because
+			small floating point numbers have relatively large errors.
+			This should only be needed if intending to reproduce a
+			two-sided FFT (also, if doing this then divide A by 2 and P 
+			by 4).
+	OneSided: (FFT Only!)
+			This should be set to remove the negative frequencies in
+			the second half of the spectra. In doing so, the amplitudes
+			are doubled and the powers are quadrupled.
+				
 	Returns
 	=======
 	Pxy:	Power
@@ -43,11 +57,11 @@ def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None):
 	
 	#Perform FFT/LS
 	if Method == 'FFT':
-		_,_,Freq,Xr,Xi = FFT(t,x,WindowFunction,Param)
-		_,_,Freq,Yr,Yi = FFT(t,y,WindowFunction,Param)
+		_,_,_,Xr,Xi,Freq = FFT(t,x,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
+		_,_,_,Yr,Yi,Freq = FFT(t,y,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
 	elif Method == 'LS':
-		_,_,_,Xr,Xi = LombScargle(t,x,Freq,'C++',WindowFunction,Param)
-		_,_,_,Yr,Yi = LombScargle(t,y,Freq,'C++',WindowFunction,Param)
+		_,_,_,Xr,Xi = LombScargle(t,x,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
+		_,_,_,Yr,Yi = LombScargle(t,y,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
 	
 	
 	

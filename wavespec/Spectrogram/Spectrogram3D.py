@@ -1,7 +1,7 @@
 import numpy as np
 from .Spectrogram import Spectrogram
 
-def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None,Threshold=0.0,Fudge=False,OneSided=True):
 
 	#check that the frequencies exist if we are using LS
 	#if Freq is None and Method == 'LS':
@@ -10,10 +10,10 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 
 
 
-	Nw,LenW,Freq,xt = Spectrogram(t,vx,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True)
-	Nw,LenW,Freq,yt = Spectrogram(t,vy,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True)
-	Nw,LenW,Freq,zt = Spectrogram(t,vz,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True)
-	
+	Nw,LenW,Freq,xt = Spectrogram(t,vx,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+	Nw,LenW,Freq,yt = Spectrogram(t,vy,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+	Nw,LenW,Freq,zt = Spectrogram(t,vz,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+	Nf = Freq.size - 1
 	#need to calculate k vector
 	Jxy = xt.Imag*yt.Real - yt.Imag*xt.Real
 	Jxz = xt.Imag*zt.Real - zt.Imag*xt.Real
@@ -25,12 +25,12 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 	
 	#create an output recarray
 	dtype = [('Tspec','float32'),
-			('xPow','float32',(LenW,)),('yPow','float32',(LenW,)),('zPow','float32',(LenW,)),
-			('xPha','float32',(LenW,)),('yPha','float32',(LenW,)),('zPha','float32',(LenW,)),
-			('xAmp','float32',(LenW,)),('yAmp','float32',(LenW,)),('zAmp','float32',(LenW,)),
-			('xReal','float32',(LenW,)),('yReal','float32',(LenW,)),('zReal','float32',(LenW,)),
-			('xImag','float32',(LenW,)),('yImag','float32',(LenW,)),('zImag','float32',(LenW,)),
-			('kx','float32',(LenW,)),('ky','float32',(LenW,)),('kz','float32',(LenW,))]
+			('xPow','float32',(Nf,)),('yPow','float32',(Nf,)),('zPow','float32',(Nf,)),
+			('xPha','float32',(Nf,)),('yPha','float32',(Nf,)),('zPha','float32',(Nf,)),
+			('xAmp','float32',(Nf,)),('yAmp','float32',(Nf,)),('zAmp','float32',(Nf,)),
+			('xReal','float32',(Nf,)),('yReal','float32',(Nf,)),('zReal','float32',(Nf,)),
+			('xImag','float32',(Nf,)),('yImag','float32',(Nf,)),('zImag','float32',(Nf,)),
+			('kx','float32',(Nf,)),('ky','float32',(Nf,)),('kz','float32',(Nf,))]
 	out = np.recarray(Nw,dtype=dtype)
 	
 	#now fill it up

@@ -24,7 +24,7 @@ def GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW=None):
 	NwTot = np.sum(Nwind[posWind]) + ngd - 1	
 	
 	if LenW is None:
-		LenW = np.int32(np.round(wind/Res))//2
+		LenW = np.int32(np.round(wind/Res))
 
 	return NwTot,LenW,Nwind
 
