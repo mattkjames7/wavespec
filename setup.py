@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="wavespec",
-    version="0.0.3",
+    version="0.0.4",
     author="Matthew Knight James",
     author_email="mattkjames7@gmail.com",
     description="Some spectral analysis tools for analyzing waves in data.",
