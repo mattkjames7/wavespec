@@ -143,3 +143,5 @@ def TestLS2(Amp=0.0,Phase=0.0,DC=0.0,BE=['Python','C++','Sam'],OneSided=True):
 	ax2.legend()
 	ax3.legend()
 	ax4.legend()
+
+	fig.tight_layout()

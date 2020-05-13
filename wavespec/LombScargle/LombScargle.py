@@ -38,7 +38,7 @@ def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
 			Tau = np.arctan2(ss2w,sc2w)/(2*w[i])
 			
 			#calculate w(t - Tau)
-			wtT = w[i]*t
+			wtT = w[i]*(t - Tau)
 			
 			#calculate some more sums
 			syc = np.sum(x*np.cos(wtT))
@@ -50,7 +50,7 @@ def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
 			#get a  and b
 			rt2n = np.sqrt(2/n)
 			a[i] = (0.5*rt2n*syc)/(np.sqrt(sc2))
-			b[i] = -(0.5*rt2n*sys)/(np.sqrt(ss2))
+			b[i] = (0.5*rt2n*sys)/(np.sqrt(ss2))
 			if Fudge:
 				if (syc < 1e-10) and (sc2 < 1e-10):
 					a[i] = 0.0
@@ -64,7 +64,11 @@ def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
 			A[i] = np.sqrt(P[i])
 			
 			#calculate phase
-			phi[i] = np.arctan2(b[i],a[i])
+			phi[i] = ((-np.arctan2(b[i],a[i]) -w[i]*Tau + np.pi) % (2.0*np.pi)) - np.pi
+			
+			c = A[i]*np.exp(1j*phi[i])
+			a[i] = c.real/2.0
+			b[i] = c.imag/2.0
 			
 	if Threshold > 0.0:
 		bad = np.where(A < Threshold)[0]

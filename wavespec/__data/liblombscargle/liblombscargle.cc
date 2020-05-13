@@ -43,8 +43,8 @@ double _tau(double *t, int n, double w) {
 void _wtT(double *t, int n, double w, double tau, double *wtT) {
 	int i;
 	for (i=0;i<n;i++) {
-		//wtT[i] = w*(t[i] - tau);
-		wtT[i] = w*(t[i]);
+		wtT[i] = w*(t[i] - tau);
+		//wtT[i] = w*(t[i]);
 	}
 }
 
@@ -151,14 +151,14 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 			
 			/* a and b */
 			a[i] = 0.5*rt2n*syc/sqrt(sc2);
-			b[i] = -0.5*rt2n*sys/sqrt(ss2);
+			b[i] = 0.5*rt2n*sys/sqrt(ss2);
 			if (Fudge) {
 				/* set to zero if there is likely to be a problem with
 				 * the fractions above because of small numbers*/
-				if ((fabs(syc) < 1e-10) && (fabs(sc2) < 1e-10)) {
+				if ((fabs(syc) < 1e-8) && (fabs(sc2) < 1e-8)) {
 					a[i] = 0.0;
 				}
-				if ((fabs(sys) < 1e-10) && (fabs(ss2) < 1e-10)) {
+				if ((fabs(sys) < 1e-8) && (fabs(ss2) < 1e-8)) {
 					b[i] = 0.0;
 				}
 			}
@@ -170,7 +170,13 @@ void LombScargle(double *t, double *x, int n, double *f, int nf, double *P, doub
 			A[i] = sqrt(P[i]);
 			
 			/* Phase */
-			phi[i] = atan2(b[i],a[i]);
+			phi[i] = fmod(((-atan2(b[i],a[i]) - w[i]*tau) + 3*M_PI),(2.0*M_PI)) - M_PI;
+			
+			/* Real and imaginary terms*/
+			a[i] = A[i]*cos(phi[i])/2.0;
+			b[i] = A[i]*sin(phi[i])/2.0;
+			
+			
 		}
 		
 		
@@ -208,9 +214,11 @@ void LombScargleSam(float *t, float *x, int n, float *f, int nf, float *P, float
 	/*call Sam's code*/
 	ComplexLS(n,nf,t,x,w,A,phi,a,b);
 
-	/*calculate power*/
+	/*calculate power and the real/imaginary components*/
 	for (i=0;i<nf;i++) {
 		P[i] = A[i]*A[i];
+		a[i] = A[i]*cos(phi[i])/2.0;
+		b[i] = A[i]*sin(phi[i])/2.0;
 	}
 	
 	/*deallocate omega*/
