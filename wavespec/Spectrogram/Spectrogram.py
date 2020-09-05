@@ -155,7 +155,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 			for j in range(0,Nwind[i]):
 				#indices for this current window
 				if isLS:
-					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))
+					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)) & np.isfinite(Tv))
 				else:
 					use0 = np.int32(j*slip/Res)
 					use = use0 + np.arange(LenW)
@@ -166,9 +166,9 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 					bad = True
 				else:
 					if isCP:
-						bad = ((np.isfinite(Tv0) == False) | (np.isfinite(Tv1) == False)).any()
+						bad = ((np.isfinite(Tv0[use]) == False) | (np.isfinite(Tv1[use]) == False)).any()
 					else:
-						bad = (np.isfinite(Tv) == False).any()
+						bad = (np.isfinite(Tv[use]) == False).any()
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
 					#detrend if necessary

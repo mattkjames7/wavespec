@@ -38,8 +38,8 @@ def Polarization2D(xPow,xPha,yPow,yPha):
 	delta = yPha - xPha
 	
 	#also the amplitudes
-	Ax = 2*np.sqrt(xPow)
-	Ay = 2*np.sqrt(yPow)
+	Ax = np.sqrt(xPow)
+	Ay = np.sqrt(yPow)
 	
 	#the auxiliary angle
 	alpha = np.arctan2(Ay,Ax)
