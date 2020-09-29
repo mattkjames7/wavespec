@@ -1,7 +1,10 @@
 import numpy as np
 from .Spectrogram import Spectrogram
 
-def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=None,Param=None,Detrend=True,FindGaps=False,GoodData=None,Threshold=0.0,Fudge=False,OneSided=True):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',
+					WindowFunction=None,Param=None,Detrend=True,
+					FindGaps=False,GoodData=None,Threshold=0.0,
+					Fudge=False,OneSided=True,Tax=None,Steps=None):
 
 	#check that the frequencies exist if we are using LS
 	#if Freq is None and Method == 'LS':
@@ -10,10 +13,10 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 
 
 
-	Nw,LenW,Freq,xt = Spectrogram(t,vx,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
-	Nw,LenW,Freq,yt = Spectrogram(t,vy,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
-	Nw,LenW,Freq,zt = Spectrogram(t,vz,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
-	Nf = Freq.size - 1
+	Nw,LenW,F,xt = Spectrogram(t,vx,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided,Tax=Tax,Steps=Steps)
+	Nw,LenW,F,yt = Spectrogram(t,vy,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided,Tax=Tax,Steps=Steps)
+	Nw,LenW,F,zt = Spectrogram(t,vz,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet=True,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided,Tax=Tax,Steps=Steps)
+	Nf = F.size - 1
 	#need to calculate k vector
 	Jxy = xt.Imag*yt.Real - yt.Imag*xt.Real
 	Jxz = xt.Imag*zt.Real - zt.Imag*xt.Real
@@ -24,7 +27,8 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 	kz = Jxy/A		
 	
 	#create an output recarray
-	dtype = [('Tspec','float32'),
+	dtype = [('Tspec','float64'),('xSize','int32'),('ySize','int32'),('zSize','int32'),
+			('xGood','int32'),('yGood','int32'),('zGood','int32'),
 			('xPow','float32',(Nf,)),('yPow','float32',(Nf,)),('zPow','float32',(Nf,)),
 			('xPha','float32',(Nf,)),('yPha','float32',(Nf,)),('zPha','float32',(Nf,)),
 			('xAmp','float32',(Nf,)),('yAmp','float32',(Nf,)),('zAmp','float32',(Nf,)),
@@ -51,4 +55,4 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',WindowFunction=Non
 	del yt
 	del zt
 	
-	return Nw,LenW,Freq,out
+	return Nw,LenW,F,out

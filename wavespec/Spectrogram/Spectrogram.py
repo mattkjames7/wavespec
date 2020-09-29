@@ -5,10 +5,13 @@ from .GetWindows import GetWindows
 from ..LombScargle.LombScargle import LombScargle
 from .DetectGaps import DetectGaps
 from ..CrossPhase.CrossPhase import CrossPhase
+from ..Tools.PolyDetrend import PolyDetrend
+from ..Tools.RemoveStep import RemoveStep
 
 def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 				Param=None,Detrend=True,FindGaps=True,GoodData=None,
-				Quiet=True,LenW=None,Threshold=0.0,Fudge=False,OneSided=True):
+				Quiet=True,LenW=None,Threshold=0.0,Fudge=False,
+				OneSided=True,Tax=None,Steps=None):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -57,6 +60,8 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 			This should be set to remove the negative frequencies in
 			the second half of the spectra. In doing so, the amplitudes
 			are doubled and the powers are quadrupled.
+	Tax :	(LS only)
+			An array of times at the centre of each bin.
 									
 	Returns
 	=======
@@ -103,7 +108,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
-	
+
 	#find the number of frequencies
 	if Freq is None or not isLS:
 		Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
@@ -113,14 +118,27 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 		df = Freq[-1] - Freq[-2]
 		Freq = np.append(Freq,Freq[-1] + np.abs(df))
 	Nf = Freq.size - 1		
-	
+
+	#check if we have a predefined time axis
+	if isLS and not Tax is None:
+		Nw = Tax.size
+		ngd = 1
+		Nwind = np.array([Nw])
+		CustTax = True
+		
+
 	#create the output arrays
-	dtype = [('Tspec','float32'),('Pow','float32',(Nf,)),('Pha','float32',(Nf,)),
-			('Amp','float32',(Nf,)),('Real','float32',(Nf,)),('Imag','float32',(Nf))]
+	dtype = [	('Tspec','float64'),		#mid point in time of the current window
+				('Pow','float32',(Nf,)),	#Power spectra
+				('Pha','float32',(Nf,)),	#phase spectra
+				('Amp','float32',(Nf,)),	#Amplitude
+				('Real','float32',(Nf,)),	#Real components of spectra
+				('Imag','float32',(Nf)),	#Imaginary components of spectra
+				('Size','int32'),			#Number of valid (finite) values used to create spectrum
+				('Good','float32'),]		#Fraction of good data
 	out = np.recarray(Nw,dtype=dtype)
-
-
 	out.fill(np.nan)
+	out.nV = 0.0
 	
 	#loop through each good secion of the time series and FFT/L-S
 	nd=0
@@ -132,67 +150,125 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 			pos+=1
 		
 		if Nwind[i] > 0:
-			#calculate the number of elements in this section and create
-			#an array of the indices to use
-			ng = Ti1[i]-Ti0[i]+1
-			good = np.arange(ng) + Ti0[i]
-			
-			#copy the subarrays for time and v
-			if isCP:
-				Tv0 = v[0][good]
-				Tv1 = v[1][good]
-				nTv = Tv0.size
+			if CustTax:
+				if isCP:
+					#good = np.where(np.isfinite(v[0]) & np.isfinite(v[1]))[0]
+					Tv0 = v[0]#[good]
+					Tv1 = v[1]#[good]
+					nTv = Tv0.size
+				else:
+					#good = np.where(np.isfinite(v))[0]
+					Tv = v#[good]
+					nTv = Tv.size
+				Tt = t#[good]
+				out.Tspec = Tax
+				if not Steps is None:
+					S = Steps
+				
 			else:
-				Tv = v[good]
-				nTv = Tv.size
-			Tt = t[good]
-			
-			#output time array 
-			Tax = np.arange(Nwind[i],dtype='float32')*slip + wind/2.0 + Tt[0]
-			out.Tspec[pos:pos+Nwind[i]] = Tax
+				#calculate the number of elements in this section and create
+				#an array of the indices to use
+				ng = Ti1[i]-Ti0[i]+1
+				good = np.arange(ng) + Ti0[i]
+				
+				#copy the subarrays for time and v
+				if isCP:
+					Tv0 = v[0][good]
+					Tv1 = v[1][good]
+					nTv = Tv0.size
+				else:
+					Tv = v[good]
+					nTv = Tv.size
+				Tt = t[good]
+				if not Steps is None:
+					S = Steps[good]
+				
+				#output time array 
+				Tax = np.arange(Nwind[i],dtype='float32')*slip + wind/2.0 + Tt[0]
+				out.Tspec[pos:pos+Nwind[i]] = Tax
 			
 			#loop through each window
 			for j in range(0,Nwind[i]):
 				#indices for this current window
-				if isLS:
-					use = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)) & np.isfinite(Tv))
+				if CustTax:
+					#for a custom time axis - use all point within 0.5*window
+					#of the midpoint of each element of the time axis
+					inds = np.where((Tt >= (out.Tspec[j] - wind/2.0)) & (Tt < (out.Tspec[j] + wind/2.0)))[0]
+				elif isLS:
+					#for when we use LS but not a custom time axis, use
+					#all elements starting from from Ti0[i]+slip*j until
+					#upto window later
+					inds = np.where((Tt >= (t[Ti0[i]] + slip*j)) & (Tt < (t[Ti0[i]] + slip*j + wind)))[0]
 				else:
+					#otherwise (FFT) everything should be perfectly evenly
+					#spaced, all windows have the same number of elements
 					use0 = np.int32(j*slip/Res)
-					use = use0 + np.arange(LenW)
-								
+					inds = use0 + np.arange(LenW)
+				
+				#check for good and bad values
+				if isCP:
+					badvals = (np.isfinite(Tv0[inds]) == False) | (np.isfinite(Tv1[inds]) == False)
+				else:
+					badvals = (np.isfinite(Tv[inds]) == False)
+				goodvals = badvals == False
+				gd = np.sum(goodvals)
+				
+				
+				#select only good values - unless doing FFT where all
+				#values should be good already
+				if isLS:
+					use = inds[np.where(goodvals)[0]]
+				else:
+					use = inds
+				
 				#this shouldn't really happen, but if the length of the array
 				#doesn't match the indices, or there are dodgy values
-				if np.max(use) >= nTv:
+				bad = False
+				if use.size == 0:
+					bad = True
+				elif np.max(use) >= nTv:
 					bad = True
 				else:
+					if isLS:
+						bad = badvals.all()
 					if isCP:
 						bad = ((np.isfinite(Tv0[use]) == False) | (np.isfinite(Tv1[use]) == False)).any()
 					else:
 						bad = (np.isfinite(Tv[use]) == False).any()
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
+					#remove steps and					
 					#detrend if necessary
+					Ttu = Tt[use]
 					if isCP:
+						Tvu0 = Tv0[use]
+						Tvu1 = Tv1[use]
+
+						if not Steps is None:
+							Tvu0 = RemoveStep(Ttu,Tvu0,S[use],2,5)
+							Tvu1 = RemoveStep(Ttu,Tvu1,S[use],2,5)
+						
 						if Detrend:
-							Tvu0 = detrend(Tv0[use])
-							Tvu1 = detrend(Tv1[use])
-						else:
-							Tvu0 = Tv0[use]
-							Tvu1 = Tv1[use]
+							Tvu0 = PolyDetrend(Ttu,Tvu0,np.int(Detrend))
+							Tvu1 = PolyDetrend(Ttu,Tvu1,np.int(Detrend))
+
+
 					else:	
+						Tvu = Tv[use]
+						if not Steps is None:
+							Tvu = RemoveStep(Ttu,Tvu,S[use],2,5)						
 						if Detrend:
-							Tvu = detrend(Tv[use])
-						else:
-							Tvu = Tv[use]
+							Tvu = PolyDetrend(Tt[use],Tv[use],np.int(Detrend))
+
 					
 					if Method == 'FFT':
-						power,amp,phase,fr,fi,freq = FFT(Tt[use],Tvu,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
+						power,amp,phase,fr,fi,freq = FFT(Ttu,Tvu,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
 					elif Method == 'LS':
-						power,amp,phase,fr,fi = LombScargle(Tt[use],Tvu,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
+						power,amp,phase,fr,fi = LombScargle(Ttu,Tvu,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
 					elif Method == 'CP-FFT':
-						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+						power,amp,phase,fr,fi,freq = CrossPhase(Ttu,Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					elif Method == 'CP-LS':
-						power,amp,phase,fr,fi,freq = CrossPhase(Tt[use],Tvu0,Tvu1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+						power,amp,phase,fr,fi,freq = CrossPhase(Ttu,Tvu0,Tvu1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					
 
 					out.Pow[j+pos] = power[0:Nf]
@@ -200,6 +276,10 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 					out.Amp[j+pos] = amp[0:Nf]
 					out.Real[j+pos] = fr[0:Nf]
 					out.Imag[j+pos] = fi[0:Nf]
+					out.Size[j+pos] = use.size
+					out.Good[j+pos] = gd/inds.size
+				else:
+					out[j+pos].Size = 0
 				if not Quiet:
 					print('\r{:6.2f}%'.format(100.0*np.float32(pos+j+1)/Nw),end='')
 	
