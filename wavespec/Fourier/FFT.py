@@ -38,7 +38,7 @@ def FFT(t,x,WindowFunction=None,Param=None,Threshold=0.0,OneSided=False):
 	i = t[1] - t[0]
 	
 	#firstly apply the window function to the time series
-	v = ApplyWindowFunction(x,WindowFunction,Param)
+	v = ApplyWindowFunction(t,x,WindowFunction,Param)
 	
 	#now to do the FFT
 	f = np.fft.fft(v)/l

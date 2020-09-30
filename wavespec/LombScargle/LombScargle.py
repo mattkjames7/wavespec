@@ -23,6 +23,7 @@ def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
 	
 	#loop through each frequency
 	for i in range(0,nf):
+		print(i)
 		if f[i] == 0:
 			A[i] = np.mean(x)
 			P[i] = A[i]**2.0
@@ -123,7 +124,7 @@ def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None,Threshold=0.
 	t = np.array([t],dtype='float64').flatten()
 	x = np.array([x0],dtype='float64').flatten()
 	f = np.array([f],dtype='float64').flatten()
-	x = ApplyWindowFunction(x,WindowFunction,Param)
+	x = ApplyWindowFunction(t,x,WindowFunction,Param)
 	
 	if Backend == 'C++':
 		#get array sizes

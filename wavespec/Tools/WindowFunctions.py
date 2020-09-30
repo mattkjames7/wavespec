@@ -1,11 +1,53 @@
 import numpy as np
 
-def ApplyWindowFunction(v,WindowFunction=None,Param=None):
+def ApplyWindowFunction(t,v,WindowFunction=None,Param=None):
+	'''
+	Apply a window function to a tim series.
+	
+	Inputs
+	======
+	t : float
+		Time array 
+	v : float 
+		Time series data to be windowed
+	WindowFunction : None | str
+		If None - no window is applied, otherwise the string names the 
+		window function to be applied (see below for list of functions)
+	Param : float
+		Sometimes a window function may be modified by some parameter,
+		setting this keyword to None will force the routine to use a 
+		default value where needed.
+		
+	Returns
+	=======
+	vw : float
+		Time series data, v, with the appropriate window function 
+		applied to it.
+		
+	Window Functions
+	================
+	Function			| Param
+	--------------------|-------------
+	None				|
+	'cosine-bell'		|
+	'hamming'			|
+	'triangle'			|
+	'welch'				|
+	'blackman'			|
+	'nuttall'			|
+	'blackman-nuttall'	|
+	'flat-top'			|
+	'cosine'			|
+	'gaussian'			|
+	
+	'''
+
 
 	# get the appropriate window function and parameters
 	WF = {	'none':				(_WFNone,0.0),
 			'cosine-bell':		(_WFCosineBell,10.0),
-			'hamming':			(_WFHamming,10.0),
+			'hamming':			(_WFHamming,50.0),
+			'hann':				(_WFHann,50.0),
 			'triangle':			(_WFTriangle,50.0),
 			'welch':			(_WFWelch,0.0),
 			'blackman':			(_WFBlackman,0.0),
@@ -13,161 +55,583 @@ def ApplyWindowFunction(v,WindowFunction=None,Param=None):
 			'blackman-nuttall':	(_WFBlackmanNuttall,0.0),
 			'flat-top':			(_WFFlatTop,0.0),
 			'cosine':			(_WFCosine,10.0),
-			'gaussian':			(_WFGaussian,0.5)}
+			'gaussian':			(_WFGaussian,(0.4,50.0))}
 	
 	Func,Pdef = WF.get(WindowFunction,(_WFNone,0.0))
 	
-	#check if anycustom parametersare being used
+	#check if anycustom parameters are being used
 	if Param is None:
 		P = Pdef
 	else:
 		P = Param
 	
 	#apply to data
-	return Func(v,P)
+	return Func(t,v,P)
 	
 
 
-def _WFNone(v,P):
+def _WFNone(t,v,P):
+	'''
+	No window function - just return original array.
+	'''
+	
 	return v
 
 
-def _WFCosineBell(v,P=10.0):
+def _WFCosineBell(t,v,P=10.0):
+	'''
+	This will multiply the date by the Split cosine bell function.
 	
-	l = np.size(v)
-	
-	t_len = np.int32(P*l/100.0)
-	theta = (np.pi/np.float32(t_len))
-	
-	out = np.array(v)
-	i = np.arange(t_len)
-	out[i] = v[i]*(0.5+(0.5*np.cos(i*theta + np.pi)))
-	
-	i = np.arange(l-1-t_len,l)
-	out[i] = v[i]*(0.5+(0.5*np.cos((l-1-i)*theta + np.pi)))
- 
-	return out
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of time series at each end to be part of the cosine.
+		The remaining 100 - 2*P % is left unchanged (if you set to 50.0,
+		then the whole window has the function applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+		
 
+	'''
 
-def _WFHamming(v,P=10.0):
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
 	
-	l = np.size(v)
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
 	
-	t_len = np.int32(P*l/100.0)
-	theta = (np.pi/np.float32(t_len))
-	
-	out = np.array(v)
-	i = np.arange(0,t_len)
-	out[i] = v[i]*(0.46*np.cos(i*theta + np.pi))+0.54
-	
-	i = np.arange(l-1-t_len,l)
-	out[i] = v[i]*(0.46*np.cos((l-1-i)*theta + np.pi))+0.54
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
 
-	return out
-	
-def _WFTriangle(v,P=50.0):
-	
-	l = np.size(v)
-	t_len = np.int32(P*l/100.0)
-	
-	out = np.array(v)
-	
-	i = np.arange(0,t_len)
-	out[i] = (np.float32(i)/t_len)*v[i]
-	i = np.arange(l-t_len,l)
-	out[i] = ((l-np.float32(i))/t_len)*v[i]
-	
-	return out
-	
-def _WFWelch(v,P=0.0):
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
 
-	l = np.float32(np.size(v))
-	out = np.array(v)
-	i = np.arange(0,l)
-	out[i] = (1-((i-((l-1)/2))/((l-1)/2))**2)*v[i]
+	#first section
+	w[i0] = 0.5 + 0.5*np.cos((ts[i0]/P + 1.0)*np.pi)
 	
-	return out
+	#last section
+	w[i2] = 0.5 + 0.5*np.cos(np.pi*(ts[i2] - (100 - P))/P)
 	
-def _WFBlackman(v,P=0.0):
 	
-	l = np.size(v)
-	out = np.array(v)
-	
-	a_0 = 7938.0/18608
-	a_1 = 9240.0/18608
-	a_2 = 1430.0/18608	
-	i = np.arange(0,l)
-	out[i] = (a_0 - a_1*np.cos((2*np.pi*i)/(l-1)) + a_2*np.cos((4*np.pi*i)/(l-1)))*v[i]
-
-	return out
-	
-def _WFNuttall(v,P=0.0):
-	
-	l = np.size(v)
-	out = np.array(v)	
-	
-	a_0 = 0.355768
-	a_1 = 0.487396
-	a_2 = 0.144232
-	a_3 = 0.012604
-	i = np.arange(0,l)
-	out[i] = (a_0 - a_1*np.cos((2*np.pi*i)/(l-1))+a_2*np.cos((4*np.pi*i)/(l-1))-a_3*np.cos((6*np.pi*i)/(l-1)))*v[i]
+	#multiply by v
+	out = v*w
 	
 	return out
 
 
-def _WFBlackmanNuttall(v,P=0.0):
+def _WFHamming(t,v,P=50.0):
+	'''
+	This will multiply the date by the Hamming window function.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+	
+	
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
 
-	l = np.size(v)
-	out = np.array(v)	
+	#first section
+	w[i0] = 0.53836 - 0.46164*np.cos(np.pi*ts[i0]/P)
+	
+	#last section
+	w[i2] = 0.53836 - 0.46164*np.cos(np.pi*(1.0 + (ts[i2] - (100 - P))/P))
+	
+	#multiply by v
+	out = v*w
 
-	a_0 = 0.3635819
-	a_1 = 0.4891775
-	a_2 = 0.1365995
-	a_3 = 0.0106411
-	i = np.arange(0,l)
-	out[i] = (a_0 - a_1*np.cos((2*np.pi*i)/(l-1))+a_2*np.cos((4*np.pi*i)/(l-1))-a_3*np.cos((6*np.pi*i)/(l-1)))*v[i]	
+	return out
+
+def _WFHann(t,v,P=50.0):
+	'''
+	This will multiply the date by the Hann window (sometimes 
+	erroneously called the "Hanning" window). This is similar to the 
+	Hamming window, but is touches zero at each end.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+	
+	
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#first section
+	w[i0] = 0.5 - 0.5*np.cos(np.pi*ts[i0]/P)
+	
+	#last section
+	w[i2] = 0.5 - 0.5*np.cos(np.pi*(1.0 + (ts[i2] - (100 - P))/P))
+	
+	#multiply by v
+	out = v*w
+
+	return out
+	
+def _WFTriangle(t,v,P=50.0):
+	'''
+	This will multiply the date by the Triangle window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+	
+	#first part
+	w[i0] = 1.0 - np.abs(ts[i0] - P)/P
+	
+	#second part
+	w[i2] = 1.0 - np.abs(ts[i2] - (100 - P))/P
+	
+	out = w*v
 	
 	return out
 	
-def _WFFlatTop(v,P=0.0):
+def _WFWelch(t,v,P=5.0):
+	'''
+	This will multiply the date by the Welch window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
 
-	l = np.size(v)
-	out = np.array(v)	
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+	
+	#first part
+	w[i0] = 1 - ((ts[i0] - P)/P)**2
+	
+	#second part
+	w[i2] = 1 - ((ts[i2] - (100 - P))/P)**2
+	
+	out = w*v	
 
-	a_0 = 1.0
-	a_1 = 1.93
-	a_2 = 1.29
-	a_3 = 0.388
-	a_4 = 0.028
-	i = np.arange(0,l)
-	out[i] = (a_0 - a_1*np.cos((2*np.pi*i)/(l-1))+a_2*np.cos((4*np.pi*i)/(l-1))-a_3*np.cos((6*np.pi*i)/(l-1))+a_4*np.cos((8*np.pi*i)/(l-1)))*v[i]	
 	
 	return out
 	
-def _WFCosine(v,P=10.0):
+def _WFBlackman(t,v,P=50.0):
+	'''
+	This will multiply the date by the Blackman window.
 	
-	l = np.size(v)
-	out = np.array(v)	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#some constants
+	a0 = 7938.0/18608
+	a1 = 9240.0/18608
+	a2 = 1430.0/18608	
 
 	
-	t_len = np.int32(P*l/100.0)
-	theta = (np.pi/np.float32(t_len))
+	#first part
+	w[i0] = a0 - a1*np.cos(np.pi*ts[i0]/P) + a2*np.cos(2*np.pi*ts[i0]/P)
 	
-	out = np.array(v)
-	i = np.arange(0,t_len)
-	out[i] = v[i]*np.cos(i*theta/2 - np.pi/2)
+	#second part
+	w[i2] = a0 - a1*np.cos(np.pi*(ts[i2] - (100 - 2*P))/P) + a2*np.cos(2*np.pi*(ts[i2] - (100 - 2*P))/P)
 	
-	i = np.arange(l-1-t_len,l)
-	out[i] = v[i]*np.cos((l-1-i)*theta/2 - np.pi/2)
+	out = w*v	
 
 	return out
 	
-def _WFGaussian(v,P=0.5):
+def _WFNuttall(t,v,P=50.0):
+	'''
+	This will multiply the date by the Nuttall window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
 
-	l = np.size(v)
-	out = np.array(v)	
-	i = np.arange(0,l)
-	out[i] = v[i]*(np.exp(-0.5*(((i-(l-1)/2.0)/(P*(l-1)/2.0))**2)))
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#some constants
+	a0 = 0.355768
+	a1 = 0.487396
+	a2 = 0.144232
+	a3 = 0.012604
+
+	
+	#first part
+	w[i0] = a0 - a1*np.cos(np.pi*ts[i0]/P) + a2*np.cos(2*np.pi*ts[i0]/P) - a3*np.cos(3*np.pi*ts[i0]/P)
+	
+	#second part
+	w[i2] = a0 - a1*np.cos(np.pi*(ts[i2] - (100 - 2*P))/P) + a2*np.cos(2*np.pi*(ts[i2] - (100 - 2*P))/P) - a3*np.cos(3*np.pi*(ts[i2] - (100 - 2*P))/P)
+	
+	out = w*v	
+
+	return out
+
+
+def _WFBlackmanNuttall(t,v,P=50.0):
+	'''
+	This will multiply the date by the Blackman-Nuttall window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#some constants
+	a0 = 0.3635819
+	a1 = 0.4891775
+	a2 = 0.1365995
+	a3 = 0.0106411
+
+	
+	#first part
+	w[i0] = a0 - a1*np.cos(np.pi*ts[i0]/P) + a2*np.cos(2*np.pi*ts[i0]/P) - a3*np.cos(3*np.pi*ts[i0]/P)
+	
+	#second part
+	w[i2] = a0 - a1*np.cos(np.pi*(ts[i2] - (100 - 2*P))/P) + a2*np.cos(2*np.pi*(ts[i2] - (100 - 2*P))/P) - a3*np.cos(3*np.pi*(ts[i2] - (100 - 2*P))/P)
+	
+	out = w*v	
+
+	return out
+	
+def _WFFlatTop(t,v,P=0.0):
+	'''
+	This will multiply the date by the flat top window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#some constants
+	a0 = 0.21557895
+	a1 = 0.41663158
+	a2 = 0.277263158
+	a3 = 0.083578947
+	a4 = 0.006947368
+
+	
+	#first part
+	w[i0] = a0 - a1*np.cos(np.pi*ts[i0]/P) + a2*np.cos(2*np.pi*ts[i0]/P) - a3*np.cos(3*np.pi*ts[i0]/P) + a4*np.cos(4*np.pi*ts[i0]/P)
+	
+	#second part
+	w[i2] = a0 - a1*np.cos(np.pi*(ts[i2] - (100 - 2*P))/P) + a2*np.cos(2*np.pi*(ts[i2] - (100 - 2*P))/P) - a3*np.cos(3*np.pi*(ts[i2] - (100 - 2*P))/P) + a4*np.cos(4*np.pi*(ts[i2] - (100 - 2*P))/P)
+	
+	out = w*v	
+
+	return out
+	
+def _WFCosine(t,v,P=50.0):
+	'''
+	This will multiply the date by the sine window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : float
+		Percentage of window to have the function applied at each end
+		(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+
+
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P)[0]
+	i2 = np.where(ts > (100 - P))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#first section
+	w[i0] = np.sin(0.5*(ts[i0]/P)*np.pi)
+	
+	#last section
+	w[i2] = np.sin(0.5*np.pi*(ts[i2] - (100 - 2*P))/P)
+	
+	
+	#multiply by v
+	out = v*w
+
+
+	return out
+	
+def _WFGaussian(t,v,P=(0.5,50.0)):
+	'''
+	This will multiply the date by the Gaussian window.
+	
+	Inputs
+	======
+	t : float
+		Time array
+	v : float
+		Time series to be windowed
+	P : tuple
+		p[0] : width of the Gaussian
+		p[1] : Percentage of window to have the function applied at each 
+		end	(if you set to 50.0, then the whole window has the function 
+		applied to it).
+		
+	Returns
+	=======
+	out : float
+		Windowed version of v
+	
+	'''
+
+
+	#get the time range
+	t0 = np.nanmin(t)
+	t1 = np.nanmax(t)
+	tr = t1 - t0
+	
+	#get a scaled time array
+	ts = 100.0*(t - t0)/tr
+	
+	#work out the indices for each section
+	i0 = np.where(ts < P[1])[0]
+	#i1 = np.where((ts >= P) & (ts <= (100 - P)))[0]
+	i2 = np.where(ts > (100 - P[1]))[0]
+
+	#calculate the window function
+	w = np.ones(t.size,dtype=v.dtype)
+
+	#first section
+	w[i0] = np.exp(-0.5*((ts[i0] - P[1])/(P[0]*P[1]))**2)
+	
+	#last section
+	w[i2] = np.exp(-0.5*(((ts[i2] - (100 - P[1])))/(P[0]*P[1]))**2)
+	
+	
+	#multiply by v
+	out = v*w
+
 	
 	return out
