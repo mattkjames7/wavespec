@@ -27,7 +27,8 @@ def RemoveStep(t,xin,step,Order=2,nInd=5,Gap=1):
 	else:
 		g1 = si0
 		
-	
+	#plt.figure()
+	#plt.plot(t,x,color='blue')
 	ng = g0.size
 	#loop through each pair of good bits 
 	for i in range(0,ng-1):
@@ -44,6 +45,10 @@ def RemoveStep(t,xin,step,Order=2,nInd=5,Gap=1):
 		tb = t[b0:b1]
 		xb = x[b0:b1]
 		
+		#plt.scatter(ta,xa,color='red')
+		#plt.scatter(tb,xb,color='orange')
+		
+		
 		#get the polyfits
 		Oa = np.min([Order,xa.size-1])
 		Ob = np.min([Order,xb.size-1])
@@ -53,28 +58,39 @@ def RemoveStep(t,xin,step,Order=2,nInd=5,Gap=1):
 			pfa = np.polyfit(ta,xa,Oa)
 			Pa = np.poly1d(pfa)
 			x0 = Pa(tb[0])
+			#plt.plot(ta,Pa(ta),color='red')
 		if Ob == 0:
 			x1 = xb[0]
 		else:
 			pfb = np.polyfit(tb,xb,Ob)
 			Pb = np.poly1d(pfb)
 			x1 = Pb(tb[0])
+			#plt.plot(tb,Pb(tb),color='orange')
 			
 		#subtract this from all of the next points
 		dx = x1 - x0
 		x[b0:] -= dx
 
+		#plt.plot(t[b0:],x[b0:],color='green')
+
 		#assess whether each point from a1 - Gap to b0 + Gap [a1-Gap:b0]
 		#is closer to original or new points
-		tg = t[a1:b0-1]
-		xg = x[a1:b0-1]
+		tg = t[a1:b0]
+		xg = x[a1:b0]
+		#plt.scatter(tg,xg,color='pink')
 		if tg.size > 0:
 			for j in range(0,tg.size):
-				da = np.abs(xg[j] - Pa(tg[j]))
-				db = np.abs(xg[j] - Pb(tg[j]))
-				if da < db:
+				if Oa == 0:
+					da = np.abs(xg[j] - x0)
+				else:
+					da = np.abs(xg[j] - Pa(tg[j]))
+				if Ob == 0:
+					db = np.abs(xg[j] - x1)
+				else:
+					db = np.abs(xg[j] - Pb(tg[j]))
+				if da > db:
 					#this means that we should apply -dx
 					x[a1 + j] -= dx
-	
+	#plt.plot(t,x,color='black')
 	return x
 		

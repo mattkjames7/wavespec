@@ -8,7 +8,7 @@ def _MakeFilter(cutoff_period,sample_freq,ftype='high'):
 	nyquist_freq = sample_freq/2.0
 	no_nyquist = cutoff_freq/nyquist_freq
 	filter_len = 3*cutoff_period*nyquist_freq
-	
+
 	if filter_len < 3:
 		print('filter_len too short')
 		return None

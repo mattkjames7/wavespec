@@ -22,7 +22,12 @@ def PolyDetrend(t,x,Order=1):
 
 
 	#get the polyfit first
-	p = np.polyfit(t,x,Order)
+	good = np.isfinite(x)
+	if not good.all():
+		use = np.where(good)[0]
+		p = np.polyfit(t[good],x[good],Order)
+	else:
+		p = np.polyfit(t,x,Order)
 	
 	#get the polynomial function
 	pf = np.poly1d(p)

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from ..LombScargle.LombScargle import LombScargle
-from ..Tools.WindowFunctions import ApplyWindowFunction
+from ..Tools.WindowFunctions import ApplyWindowFunction,WindowScaleFactor
 
 def LSOversample(f=0.005,NoiseLevel=1.0,
 				Backend='C++',WindowFunction=None,Param=None,
@@ -44,6 +44,8 @@ def LSOversample(f=0.005,NoiseLevel=1.0,
 		wflab = 'No window'
 	else:
 		wflab = 'WF: '+WindowFunction
+		
+	sf = WindowScaleFactor(WindowFunction,Param)
 	
 	ax0.plot(t,x,color='black')
 	ax0.plot(t,ApplyWindowFunction(t,x,WindowFunction,Param),color='red')
@@ -54,8 +56,8 @@ def LSOversample(f=0.005,NoiseLevel=1.0,
 	ax0.set_title('$f$ = {:6.2f} mHz'.format(1000.0*f))
 	ax0.legend()
 
-	ax1.plot(freq0,P0,label='FFT Frequencies',color='blue')
-	ax1.plot(freq1,P1,label='4x Oversampled',color='orange')
+	ax1.plot(freq0,P0/(sf**2),label='FFT Frequencies',color='blue')
+	ax1.plot(freq1,P1/(sf**2),label='4x Oversampled',color='orange')
 	if flim is None:
 		flim = [0.0,f*2]
 	ax1.set_xlim(flim)
