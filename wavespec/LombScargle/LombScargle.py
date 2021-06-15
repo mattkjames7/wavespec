@@ -23,7 +23,6 @@ def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
 	
 	#loop through each frequency
 	for i in range(0,nf):
-		print(i)
 		if f[i] == 0:
 			A[i] = np.mean(x)
 			P[i] = A[i]**2.0

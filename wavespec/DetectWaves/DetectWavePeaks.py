@@ -10,7 +10,13 @@ def DetectWavePeaks(t,f,P,Threshold,LargestPeak=False):
 	nf = f.size
 	
 	#find the peaks
-	ispeak = np.isfinite(P[:,1:-1]) & (P[:,1:-1] > P[:,0:-2]) & (P[:,1:-1] > P[:,2:]) & (P[:,1:-1] >= Threshold)
+	if callable(Threshold):
+		T = Threshold(f[1:-1])
+		ispeak = np.zeros((P.shape[0],P.shape[1]-2),dtype='bool')
+		for i in range(0,t.size):
+			ispeak[i] = np.isfinite(P[i,1:-1]) & (P[i,1:-1] > P[i,0:-2]) & (P[i,1:-1] > P[i,2:]) & (P[i,1:-1] >= T)
+	else:
+		ispeak = np.isfinite(P[:,1:-1]) & (P[:,1:-1] > P[:,0:-2]) & (P[:,1:-1] > P[:,2:]) & (P[:,1:-1] >= Threshold)
 	
 	if LargestPeak:
 		#select largest peak

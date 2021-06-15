@@ -37,6 +37,7 @@ def DetectGaps(v,GoodData=None):
 		good = GoodData
 	st = -1
 	ngd = 0
+
 	for i in range(0,Tlen):
 		if good[i]:
 			if st == -1:

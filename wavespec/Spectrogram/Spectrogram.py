@@ -135,7 +135,8 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 				('Real','float32',(Nf,)),	#Real components of spectra
 				('Imag','float32',(Nf)),	#Imaginary components of spectra
 				('Size','int32'),			#Number of valid (finite) values used to create spectrum
-				('Good','float32'),]		#Fraction of good data
+				('Good','float32'),			#Fraction of good data
+				('Var','float32'),]			#Variance
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
@@ -263,12 +264,16 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 					
 					if Method == 'FFT':
 						power,amp,phase,fr,fi,freq = FFT(Ttu,Tvu,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
+						out.Var[j+pos] = np.var(Tvu)
 					elif Method == 'LS':
 						power,amp,phase,fr,fi = LombScargle(Ttu,Tvu,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
+						out.Var[j+pos] = np.var(Tvu)
 					elif Method == 'CP-FFT':
 						power,amp,phase,fr,fi,freq = CrossPhase(Ttu,Tvu0,Tvu1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+						out.Var[j+pos] = np.var(Tvu0)
 					elif Method == 'CP-LS':
 						power,amp,phase,fr,fi,freq = CrossPhase(Ttu,Tvu0,Tvu1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+						out.Var[j+pos] = np.var(Tvu0)
 					
 
 					out.Pow[j+pos] = power[0:Nf]

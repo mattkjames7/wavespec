@@ -42,10 +42,10 @@ def Polarization2D(xPow,xPha,yPow,yPha):
 	Ay = np.sqrt(yPow)
 	
 	#the auxiliary angle
-	alpha = np.arctan2(Ay,Ax)
+	alpha = np.arctan(Ay/Ax)
 	
 	#the angle between the x/y axes and the axes of the ellipse
-	psi = np.arctan(np.tan(2.0*alpha)*np.cos(delta))/2.0
+	psi = np.arctan2(np.cos(delta),1/np.tan(2.0*alpha))/2.0
 	
 	#calculate the axes of the ellipse
 	cospsi = np.cos(psi)

@@ -29,6 +29,7 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,Freq=None,Method='FFT',
 	#create an output recarray
 	dtype = [('Tspec','float64'),('xSize','int32'),('ySize','int32'),('zSize','int32'),
 			('xGood','int32'),('yGood','int32'),('zGood','int32'),
+			('xVar','float32'),('yVar','float32'),('zVar','float32'),
 			('xPow','float32',(Nf,)),('yPow','float32',(Nf,)),('zPow','float32',(Nf,)),
 			('xPha','float32',(Nf,)),('yPha','float32',(Nf,)),('zPha','float32',(Nf,)),
 			('xAmp','float32',(Nf,)),('yAmp','float32',(Nf,)),('zAmp','float32',(Nf,)),
