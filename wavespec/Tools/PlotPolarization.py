@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from .UTPlotLabel import UTPlotLabel
+import DateTimeTools as TT
 
 def PlotPolarization(t,Ax,Ay,Px,Py,Dir,fig=None,maps=[1,1,0,0],Multiplier=1.0,nox=False,trange=None,TimeAxisUnits='s'):
 	
@@ -54,7 +55,7 @@ def PlotPolarization(t,Ax,Ay,Px,Py,Dir,fig=None,maps=[1,1,0,0],Multiplier=1.0,no
 		ax.xaxis.set_visible(False)
 	else:
 		if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
-			UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
+			TT.DTPlotLabel(ax)
 			ax.set_xlabel(xlabel)
 	lbl = ax.get_yticklabels()
 	ax.set_yticklabels(['']*np.size(lbl))

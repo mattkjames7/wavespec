@@ -31,7 +31,7 @@ def DetectWavePeaks(t,f,P,Threshold,LargestPeak=False):
 	#create the output array
 	n = tind.size
 	dtype = [('Power','float32'),('tind','int32'),('find','int32'),
-			('t','float32'),('f','float32')]
+			('t','float64'),('f','float64')]
 	out = np.recarray(n,dtype=dtype)
 	
 	out.Power = P[tind,find+1]

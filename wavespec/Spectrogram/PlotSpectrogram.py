@@ -5,6 +5,7 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from .DetectGaps import DetectGaps
 from ..Tools.UTPlotLabel import UTPlotLabel
+import DateTimeTools as TT
 
 def _mode(x):
 	u,c = np.unique(x,return_counts=True)
@@ -148,11 +149,12 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 	if scale is None:
 		scale = [np.nanmin(S),np.nanmax(S)]
 	if zlog:
-		norm = colors.LogNorm()
 		if scale == 0.0:
 			scale[0] = np.nanmin(S[(S > 0) & np.isfinite(S)])
+		norm = colors.LogNorm(vmin=scale[0],vmax=scale[1])
+
 	else:
-		norm = colors.Normalize()	
+		norm = colors.Normalize(vmin=scale[0],vmax=scale[1])	
 	
 	#create the plot
 	if fig is None:
@@ -174,7 +176,7 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 		#mesh the axes
 		tm,fm = np.meshgrid(tax,f)
 		#plot the section
-		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,vmin=scale[0],vmax=scale[1],norm=norm)
+		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,norm=norm)
 
 	#colour bar
 	fig.subplots_adjust(right=0.8)
@@ -193,7 +195,8 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 		ax.xaxis.set_visible(False)
 	else:
 		if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
-			UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
+			#UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
+			TT.DTPlotLabel(ax)
 			ax.set_xlabel('UT')	
 
 			

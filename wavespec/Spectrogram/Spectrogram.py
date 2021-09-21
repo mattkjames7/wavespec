@@ -108,7 +108,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 
 	#find the number of windows
 	Nw,LenW,Nwind = GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW)
-
+	
 	#find the number of frequencies
 	if Freq is None or not isLS:
 		Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
@@ -125,7 +125,8 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 		ngd = 1
 		Nwind = np.array([Nw])
 		CustTax = True
-		
+	else:
+		CustTax = False	
 
 	#create the output arrays
 	dtype = [	('Tspec','float64'),		#mid point in time of the current window
@@ -185,9 +186,9 @@ def Spectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 					S = Steps[good]
 				
 				#output time array 
-				Tax = np.arange(Nwind[i],dtype='float32')*slip + wind/2.0 + Tt[0]
+				Tax = np.arange(Nwind[i],dtype='float64')*slip + wind/2.0 + Tt[0]
 				out.Tspec[pos:pos+Nwind[i]] = Tax
-			
+
 			#loop through each window
 			for j in range(0,Nwind[i]):
 				#indices for this current window
