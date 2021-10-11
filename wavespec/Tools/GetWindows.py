@@ -1,6 +1,6 @@
 import numpy as np
 
-def GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW=None):
+def GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax=None):
 	'''
 	Gets the total nuimber of time windows to transform.
 	
@@ -16,17 +16,80 @@ def GetWindows(t,wind,slip,ngd,Ti0,Ti1,LenW=None):
 			in all windows, otherwise the window length is defined by wind
 	'''
 
-	Res = t[1] - t[0]
-	Tranges = t[Ti1] - t[Ti0]
-	Nwind = np.int32((Tranges - wind)/slip) + 2
-	
-	posWind = np.where(Nwind > 0)[0]
-	NwTot = np.sum(Nwind[posWind]) + ngd - 1	
-	
-	if LenW is None:
-		LenW = np.int32(np.round(wind/Res))
+	if Tax is None:
+		Tranges = t[Ti1] - t[Ti0]
+		Nw = np.int32((Tranges - wind)/slip) + 2
 
-	return NwTot,LenW,Nwind
+		tax = []
+		Wi0 = []
+		Wi1 = []
+		for i in range(0,ngd):
+			t0 = t[Ti0] + np.arange(Nw[i])*slip
+			t1 = t0 + wind
+			tax.append(t0 + 0.5*wind)
+			if Nw[i] > 0:
+				i0 = np.zeros(Nw[i],dtype='int32')
+				i1 = np.zeros(Nw[i],dtype='int32')
+				for j in range(0,Nw[i]):
+					use = np.where((t >= t0[j]) & (t < t1[j]))[0]
+					if use.size == 0:
+						i0[j] = -1
+						i1[j] = -1
+					else:
+						i0[j] = use.min()
+						i1[j] = use.max()
+			else:
+				i0 = []
+				i1 = []
+			Wi0.append(i0)
+			Wi1.append(i1)
+			
+	else:
+
+		Nw = np.array([Tax.size])
+		tax = []
+		Wi0 = []
+		Wi1 = []		
+		
+
+		t0 = Tax - wind/2.0
+		t1 = Tax + wind/2.0	
+		tax.append(t0 + 0.5*wind)
+
+		i0 = np.zeros(Nw[0],dtype='int32')
+		i1 = np.zeros(Nw[0],dtype='int32')
+		for j in range(0,Nw[0]):
+			use = np.where((t >= t0[j]) & (t < t1[j]))[0]
+			if use.size == 0:
+				i0[j] = -1
+				i1[j] = -1
+			else:
+				i0[j] = use.min()
+				i1[j] = use.max()
+
+		Wi0.append(i0)
+		Wi1.append(i1)
+		Nw = np.array(Nw)
+		
+	posWind = np.where(Nw > 0)[0]
+	NwTot = np.sum(Nw[posWind]) + ngd - 1	
+	
+	Tax = np.zeros(NwTot,dtype='float64')
+	ng = 0
+	pos = 0
+	for i in range(0,ngd):
+		if nd > 0:
+			Tax[pos] = (Tax[pos-1] + t[Ti0[i]] + wind/2.0)/2.0
+			pos += 1
+		
+		if Nw[i] > 0:
+			Tax[pos:pos+Nw[i]] = tax[i]
+			pos += Nw[i]
+			nd += 1		
+		
+			
+	
+	return NwTot,Nw,Wi0,Wi1,Tax
 
 def GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits='s'):
 	'''
