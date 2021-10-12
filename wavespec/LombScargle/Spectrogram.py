@@ -6,7 +6,7 @@ from ..Tools.RemoveStep import RemoveStep
 from ..Tools.GetWindows import GetLSWindows
 
 def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
-				Param=None,FreqLen=None,Detrend=True,FindGaps=True,
+				Param=None,FreqLim=None,Detrend=True,FindGaps=True,
 				GoodData=None,Quiet=True,Threshold=0.0,Fudge=False,
 				Tax=None,Steps=None):
 	'''
@@ -115,7 +115,12 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		df = Freq[-1] - Freq[-2]
 		Freq = np.append(Freq,Freq[-1] + np.abs(df))
 	Nf = Freq.size - 1		
-
+	if FreqLim is None:
+		Nf = Freq.size - 1		
+		find = np.arange(Nf).astype('int32')
+	else:
+		find = np.where((Freq >= FreqLim[0]) & (Freq <= FreqLim[1]))[0]
+		Nf = usef.size
 
 
 	#create the output arrays
@@ -123,7 +128,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 				('Pow','float32',(Nf,)),	#Power spectra
 				('Pha','float32',(Nf,)),	#phase spectra
 				('Amp','float32',(Nf,)),	#Amplitude
-				('Comp','float32',(Nf,)),	#Real and Imaginary components of spectra
+				('Comp','complex64',(Nf,)),	#Real and Imaginary components of spectra
 				('Size','int32'),			#Number of valid (finite) values used to create spectrum
 				('Good','float32'),			#Fraction of good data
 				('Var','float32'),]			#Variance
@@ -144,18 +149,18 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 			#loop through each window
 			for j in range(0,Nw[i]):
 				#get the data for this window
-				ind = Wi0[i][j] + ind0
+				ind = np.arange(Wi0[i][j],Wi1[i][j]+1)
 				tw = t[ind]
 				vw = v[ind]
 				
-				badvals = (np.isfinite(vw[ind]) == False)
+				badvals = (np.isfinite(vw) == False)
 				goodvals = badvals == False
 				gd = np.sum(goodvals)
 				
 				
 				#select only good values - unless doing FFT where all
 				#values should be good already
-				use = ind[np.where(goodvals)[0]]
+				use = np.where(goodvals)[0]
 
 				
 				#this shouldn't really happen, but if the length of the array
@@ -201,5 +206,5 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		print('')			
 			
 			
-	return NwTot,LenW,Freq,out
+	return NwTot,Freq,out
 	

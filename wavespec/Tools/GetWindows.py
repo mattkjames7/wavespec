@@ -75,7 +75,7 @@ def GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax=None):
 	NwTot = np.sum(Nw[posWind]) + ngd - 1	
 	
 	Tax = np.zeros(NwTot,dtype='float64')
-	ng = 0
+	nd = 0
 	pos = 0
 	for i in range(0,ngd):
 		if nd > 0:

@@ -1,7 +1,7 @@
 import numpy as np
 from .Spectrogram import Spectrogram
 
-def Spectrogram3D(t,vx,vy,vz,wind,CombineComps=False,**kwargs):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,CombineComps=False,**kwargs):
 
 	#Calculate the three sets of spectra
 	Nw,LenW,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)
@@ -10,9 +10,9 @@ def Spectrogram3D(t,vx,vy,vz,wind,CombineComps=False,**kwargs):
 	Nf = F.size - 1
 	
 	#need to calculate k vector
-	Jxy = xt.Imag*yt.Real - yt.Imag*xt.Real
-	Jxz = xt.Imag*zt.Real - zt.Imag*xt.Real
-	Jyz = yt.Imag*zt.Real - zt.Imag*yt.Real
+	Jxy = xt.Comp.imag*yt.Comp.real - yt.Comp.imag*xt.Comp.real
+	Jxz = xt.Comp.imag*zt.Comp.real - zt.Comp.imag*xt.Comp.real
+	Jyz = yt.Comp.imag*zt.Comp.real - zt.Comp.imag*yt.Comp.real
 	A = np.sqrt(Jxy**2 + Jxz**2 + Jyz**2)	
 	kx = Jyz/A
 	ky =-Jxz/A
@@ -30,10 +30,10 @@ def Spectrogram3D(t,vx,vy,vz,wind,CombineComps=False,**kwargs):
 			
 	#combine some components
 	if CombineComps:
-		dtypec = [	('xyComp','complex64'),('yzComp','complex64'),('zxComp','complex64'),
-					('xyPow','float32'),('yzPow','float32'),('zxPow','float32'),
-					('xyPha','float32'),('yzPha','float32'),('zxPha','float32'),
-					('xyAmp','float32'),('yzAmp','float32'),('zxAmp','float32'),]
+		dtypec = [	('xyComp','complex64',(Nf,)),('yzComp','complex64',(Nf,)),('zxComp','complex64',(Nf,)),
+					('xyPow','float32',(Nf,)),('yzPow','float32',(Nf,)),('zxPow','float32',(Nf,)),
+					('xyPha','float32',(Nf,)),('yzPha','float32',(Nf,)),('zxPha','float32',(Nf,)),
+					('xyAmp','float32',(Nf,)),('yzAmp','float32',(Nf,)),('zxAmp','float32',(Nf,)),]
 		for dc in dtypec:
 			dtype.append(dc)
 			
