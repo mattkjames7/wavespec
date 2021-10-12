@@ -1,11 +1,11 @@
 import numpy as np
-from .LombScargle import LombScargle
+from .CrossPhase import CrossPhase
+from ..Tools.GetWindows import GetFFTWindows
 from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
-from ..Tools.GetWindows import GetLSWindows
 
-def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
+def SpectrogramLS(t,v,wind,slip,Freq=None,WindowFunction=None,
 				Param=None,FreqLim=None,Detrend=True,FindGaps=True,
 				GoodData=None,Quiet=True,Threshold=0.0,Fudge=False,
 				Tax=None,Steps=None):
@@ -88,7 +88,6 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 	else:
 		Res = np.nanmean(t[1:]-t[:-1])
 
-
 	#detect and gaps in the input data
 	if FindGaps:
 		ngd,Ti0,Ti1 = DetectGaps(v,GoodData)
@@ -123,6 +122,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		Nf = usef.size
 
 
+
 	#create the output arrays
 	dtype = [	('Tspec','float64'),		#mid point in time of the current window
 				('Pow','float32',(Nf,)),	#Power spectra
@@ -136,10 +136,12 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 	out.fill(np.nan)
 	out.nV = 0.0
 	out.Tspec = Tax
-	
-	#loop through each good secion of the time series and FFT/L-S
+
+				
+	#loop through each good secion of the time series and FFT
 	nd=0
 	pos=0
+	ind0 = np.arange(LenW).astype('int32')
 	for i in range(0,ngd):
 		if nd > 0:
 			#this bit adds a load of NaNs in a gap in the middle of two good sections
@@ -149,11 +151,12 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 			#loop through each window
 			for j in range(0,Nw[i]):
 				#get the data for this window
-				ind = np.arange(Wi0[i][j],Wi1[i][j]+1)
+				ind = Wi0[i][j] + ind0
 				tw = t[ind]
-				vw = v[ind]
+				vw0 = v[0][ind]
+				vw1 = v[1][ind]
 				
-				badvals = (np.isfinite(vw) == False)
+				badvals = (np.isfinite(vw0) == False) | (np.isfinite(vw1) == False)
 				goodvals = badvals == False
 				gd = np.sum(goodvals)
 				
@@ -162,39 +165,43 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 				#values should be good already
 				use = np.where(goodvals)[0]
 
-				
 				#this shouldn't really happen, but if the length of the array
 				#doesn't match the indices, or there are dodgy values
 				bad = False
 				if use.size == 0:
 					bad = True
-				elif np.max(use) >= vw.size:
+				elif np.max(use) >= vw0.size:
 					bad = True
 				else:
 					bad = badvals.all()
-					bad = (np.isfinite(vw[use]) == False).any()
+					bad = ((np.isfinite(vw0[use]) == False) | (np.isfinite(vw1[use]) == False)).any()
 
 				tw = tw[use]
-				vw = vw[use]
-									
+				vw0 = vw0[use]
+				vw1 = vw1[use]
+
+				
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
 					#remove steps and					
 					#detrend if necessary
 					if not Steps is None:
-						vw = RemoveStep(tw,vw,Steps[ind],2,5)						
+						vw0 = RemoveStep(tw,vw0,Steps[ind],2,5)						
+						vw1 = RemoveStep(tw,vw1,Steps[ind],2,5)						
 					if Detrend:
-						vw = PolyDetrend(tw,vw,np.int(Detrend))
+						vw0 = PolyDetrend(tw,vw0,np.int(Detrend))
+						vw1 = PolyDetrend(tw,vw1,np.int(Detrend))
 
-					power,amp,phase,fr,fi = LombScargle(tw,vw,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
-					out.Var[j+pos] = np.var(vw)
+
+					power,amp,phase,fr,fi,freq = CrossPhase(tw,vw0,vw1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+					out.Var[j+pos] = np.var(vw0) + np.var(vw1)
 				
 					out.Pow[j+pos] = power[find]
 					out.Pha[j+pos] = phase[find]
 					out.Amp[j+pos] = amp[find]
 					out.Comp[j+pos] = fr[find] + 1j*fi[find]
-					out.Size[j+pos] = use.size
-					out.Good[j+pos] = gd.size/ind.size
+					out.Size[j+pos] = ind.size
+					out.Good[j+pos] = 1.0
 				else:
 					out[j+pos].Size = 0
 				if not Quiet:
@@ -203,8 +210,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 			pos += Nw[i]
 			nd += 1
 	if not Quiet:
-		print('')			
+		print('')
 			
-			
-	return NwTot,Freq,out
+	return NwTot,LenW,Freq,out
 	

@@ -1,14 +1,14 @@
 import numpy as np
-from .LombScargle import LombScargle
+from .CrossPhase import CrossPhase
+from ..Tools.GetWindows import GetFFTWindows
 from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
-from ..Tools.GetWindows import GetLSWindows
 
-def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
-				Param=None,FreqLim=None,Detrend=True,FindGaps=True,
-				GoodData=None,Quiet=True,Threshold=0.0,Fudge=False,
-				Tax=None,Steps=None):
+def SpectrogramFFT(t,v,wind,slip,WindowFunction=None,Param=None,
+				FreqLim=None,Detrend=True,FindGaps=True,GoodData=None,
+				Quiet=True,Threshold=0.0,WindowUnits='s',
+				OneSided=True,Steps=None):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -80,14 +80,8 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 	if Tlen <= 1:
 		return (0,0,0,0)
 
-	#we need frequencies here, so we will assume that the data are
-	#evenly spaced and that we can use the FFT frequencies
-	dt,ct = np.unique((t[1:]-t[:-1]),return_counts=True)
-	if ct.max() > Tlen/2:
-		Res = dt[ct.argmax()]		
-	else:
-		Res = np.nanmean(t[1:]-t[:-1])
-
+	#work out the time resolution - let's hope that it is constant
+	Res = t[1] - t[0]
 
 	#detect and gaps in the input data
 	if FindGaps:
@@ -97,24 +91,13 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		Ti0 = np.array([0])
 		Ti1 = np.array([Tlen-1])
 
-	#check if we have a predefined time axis
-	if not Tax is None:
-		Nw = Tax.size
-		ngd = 1
-		Nwind = np.array([Nw])
-
 	#find the number of windows
-	NwTot,Nw,Wi0,Wi1,Tax = GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax)
+	NwTot,LenW,LenS,Nw,Wi0,Wi1 = GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits)
 	
 	#find the number of frequencies
-	if Freq is None:
-		LenW = np.int32(np.round(wind/Res))
-		Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
-		Freq = Freq[:LenW//2 + 1]
-	else:
-		df = Freq[-1] - Freq[-2]
-		Freq = np.append(Freq,Freq[-1] + np.abs(df))
-	Nf = Freq.size - 1		
+	Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
+	if OneSided:
+		Freq = Freq[:LenW//2 + 1]	
 	if FreqLim is None:
 		Nf = Freq.size - 1		
 		find = np.arange(Nf).astype('int32')
@@ -135,11 +118,25 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
-	out.Tspec = Tax
 	
-	#loop through each good secion of the time series and FFT/L-S
+	#Populate the time axis
+	nd = 0
+	pos = 0
+	for i in range(0,ngd):
+		if nd > 0:
+			#this bit adds a load of NaNs in a gap in the middle of two good sections
+			out.Tspec[pos] = (out.Tspec[pos-1] + t[Ti0[i]] + wind/2.0)/2.0
+			pos+=1
+		
+		if Nw[i] > 0:
+			out.Tspec[pos:pos+Nw[i]] = np.arange(Nw[i],dtype='float64')*slip + wind/2.0 + t[Ti0[i]]
+			pos += Nw[i]
+			nd += 1
+				
+	#loop through each good secion of the time series and FFT
 	nd=0
 	pos=0
+	ind0 = np.arange(LenW).astype('int32')
 	for i in range(0,ngd):
 		if nd > 0:
 			#this bit adds a load of NaNs in a gap in the middle of two good sections
@@ -149,52 +146,34 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 			#loop through each window
 			for j in range(0,Nw[i]):
 				#get the data for this window
-				ind = np.arange(Wi0[i][j],Wi1[i][j]+1)
+				ind = Wi0[i][j] + ind0
 				tw = t[ind]
-				vw = v[ind]
+				vw0 = v[0][ind]
+				vw1 = v[1][ind]
 				
-				badvals = (np.isfinite(vw) == False)
-				goodvals = badvals == False
-				gd = np.sum(goodvals)
+				bad = ((np.isfinite(vw0) == False) | (np.isfinite(vw1) == False)).any()
 				
-				
-				#select only good values - unless doing FFT where all
-				#values should be good already
-				use = np.where(goodvals)[0]
-
-				
-				#this shouldn't really happen, but if the length of the array
-				#doesn't match the indices, or there are dodgy values
-				bad = False
-				if use.size == 0:
-					bad = True
-				elif np.max(use) >= vw.size:
-					bad = True
-				else:
-					bad = badvals.all()
-					bad = (np.isfinite(vw[use]) == False).any()
-
-				tw = tw[use]
-				vw = vw[use]
-									
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
 					#remove steps and					
 					#detrend if necessary
 					if not Steps is None:
-						vw = RemoveStep(tw,vw,Steps[ind],2,5)						
+						vw0 = RemoveStep(tw,vw0,Steps[ind],2,5)						
+						vw1 = RemoveStep(tw,vw1,Steps[ind],2,5)						
 					if Detrend:
-						vw = PolyDetrend(tw,vw,np.int(Detrend))
+						vw0 = PolyDetrend(tw,vw0,np.int(Detrend))
+						vw1 = PolyDetrend(tw,vw1,np.int(Detrend))
 
-					power,amp,phase,fr,fi = LombScargle(tw,vw,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
-					out.Var[j+pos] = np.var(vw)
+
+					power,amp,phase,fr,fi,freq = CrossPhase(tw,vw0,vw1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+					out.Var[j+pos] = np.var(vw0) + np.var(vw1)
 				
 					out.Pow[j+pos] = power[find]
 					out.Pha[j+pos] = phase[find]
 					out.Amp[j+pos] = amp[find]
 					out.Comp[j+pos] = fr[find] + 1j*fi[find]
-					out.Size[j+pos] = use.size
-					out.Good[j+pos] = gd.size/ind.size
+					out.Size[j+pos] = ind.size
+					out.Good[j+pos] = 1.0
 				else:
 					out[j+pos].Size = 0
 				if not Quiet:
@@ -203,8 +182,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 			pos += Nw[i]
 			nd += 1
 	if not Quiet:
-		print('')			
+		print('')
 			
-			
-	return NwTot,Freq,out
+	return NwTot,LenW,Freq,out
 	

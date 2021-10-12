@@ -207,3 +207,5 @@ def Spectrogram3D():
 	
 	fmx = np.min([Freq.max(),1.5*np.max([fx0,fx1,fy0,fy1])])
 	ax1.set_ylim(0,fmx*1000)
+
+	return Spec
