@@ -3,14 +3,25 @@ import matplotlib.pyplot as plt
 from .Spectrogram import Spectrogram
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from ..Tools.DetectGaps import DetectGaps
+from .DetectGaps import DetectGaps
 from ..Tools.UTPlotLabel import UTPlotLabel
 import DateTimeTools as TT
-from ..Tools.mode import mode
-from ..Spectrogram.SpectrogramPlotter import SpectrogramPlotter
 
-#t,v,wind,slip
-def PlotSpectrogram(*args,**kwargs):
+from .. import Fourier
+from .. import LombScargle
+from .. import CrossPhase
+
+def _mode(x):
+	u,c = np.unique(x,return_counts=True)
+	return u[c.argmax()]
+	
+
+
+def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
+					Param=None,Detrend=True,FindGaps=True,GoodData=None,
+					Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',
+					scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz',
+					nox=False,Threshold=0.0,Fudge=False,OneSided=True):
 	'''
 	Plots a spectrogram by calling the "Spectrogram" routine which
 	creates a spectogram using a sliding window.
@@ -93,37 +104,16 @@ def PlotSpectrogram(*args,**kwargs):
 				Real : Real component at each frequency in each window, shape (Nw,LenW)
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''	
-
 	
-	fig = kwargs.get('fig',None)
-	maps = kwargs.get('maps',[1,1,0,0])
-	PlotType = kwargs.get('PlotType','Pow')
-	scale = kwargs.get('scale',None)
-	zlog = kwargs.get('zlog',False)
-	TimeAxisUnits = kwargs.get('TimeAxisUnits','s')
-	FreqAxisUnits = kwargs.get('FreqAxisUnits','Hz')
-	nox = kwargs.get('nox',False)
-	cmap = kwargs.get('cmap','gnuplot')
 	
-	if len(args) == 2:
-		Freq,Spec = args
-		Nw = Spec.size
-		Nf = Freq.size - 1
-	else:
-		t,v,wind,slip = args
-		Nw,Freq,Spec = Spectrogram(t,v,wind,slip,**kwargs)
-		Nf = Freq.size - 1
+	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+	Nf = Freq.size - 1
 
 	#select the parameter to plot
 	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
 		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
 		PlotType = 'Pow'
-	if PlotType == 'Real':
-		S = Spec.Comp.real()
-	elif PlotType == 'Imag':
-		S = Spec.Comp.imag()
-	else:
-		S = Spec[PlotType]
+	S = Spec[PlotType]
 	
 	#scale the time axis
 	if TimeAxisUnits == 'h':
@@ -135,7 +125,7 @@ def PlotSpectrogram(*args,**kwargs):
 	else:
 		ts = Spec.Tspec
 		xlabel = 'Time (s)'
-	dt = mode(ts[1:] - ts[:-1])/2.0
+	dt = _mode(ts[1:] - ts[:-1])/2.0
 	
 	
 	#find gaps
@@ -160,10 +150,45 @@ def PlotSpectrogram(*args,**kwargs):
 			   'Real' : 'Real Component',
 			   'Imag' : 'Imaginary Component'}
 	zlabel = zunits[PlotType]
+	if scale is None:
+		scale = [np.nanmin(S),np.nanmax(S)]
+	if zlog:
+		if scale == 0.0:
+			scale[0] = np.nanmin(S[(S > 0) & np.isfinite(S)])
+		norm = colors.LogNorm(vmin=scale[0],vmax=scale[1])
 
-	ax = SpectrogramPlotter(ngd,T0,T1,ts,f,S,fig=fig,maps=maps,zlog=zlog,
-									scale=scale,cmap=cmap,zlabel=zlabel)
+	else:
+		norm = colors.Normalize(vmin=scale[0],vmax=scale[1])	
 	
+	#create the plot
+	if fig is None:
+		fig = plt
+		fig.figure()
+	ax = fig.subplot2grid((maps[1],maps[0]),(maps[3],maps[2]))
+	cmap = plt.cm.get_cmap('gnuplot')
+	
+	
+	#loop through each good section
+	sm = None
+	for i in range(0,ngd):
+		#select the good portion of the 
+		use = np.arange(T0[i],T1[i]+1)
+		tax = np.append(ts[use]-dt,ts[use[-1]]+dt)
+		Stmp = S[use]
+		
+		
+		#mesh the axes
+		tm,fm = np.meshgrid(tax,f)
+		#plot the section
+		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,norm=norm)
+
+	#colour bar
+	fig.subplots_adjust(right=0.8)
+	box = ax.get_position()
+	if not sm is None:
+		cax = plt.axes([0.05*box.width + box.x1,box.y0+0.1*box.height,box.width*0.025,box.height*0.8])
+		cbar = fig.colorbar(sm,cax=cax)
+		cbar.set_label(zlabel)
 		
 	#axis labels
 	ax.set_xlabel(xlabel)
@@ -179,4 +204,4 @@ def PlotSpectrogram(*args,**kwargs):
 			ax.set_xlabel('UT')	
 
 			
-	return ax,Nw,Freq,Spec
+	return ax,Nw,LenW,Freq,Spec

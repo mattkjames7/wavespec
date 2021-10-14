@@ -1,13 +1,15 @@
 import numpy as np
 from .Spectrogram import Spectrogram
 
-def Spectrogram3D(t,vx,vy,vz,wind,slip,CombineComps=False,**kwargs):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
+
+	CombineComps = kwargs('CombineComps',False)
 
 	#Calculate the three sets of spectra
 	Nw,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)
 	Nw,F,yt = Spectrogram(t,vy,wind,slip,**kwargs)
 	Nw,F,zt = Spectrogram(t,vz,wind,slip,**kwargs)
-	Nf = F.size - 1
+	Nf = F.size
 	
 	#need to calculate k vector
 	Jxy = xt.Comp.imag*yt.Comp.real - yt.Comp.imag*xt.Comp.real

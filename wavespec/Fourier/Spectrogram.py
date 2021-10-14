@@ -5,10 +5,7 @@ from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
 
-def Spectrogram(t,v,wind,slip,WindowFunction=None,Param=None,
-				FreqLim=None,Detrend=True,FindGaps=True,GoodData=None,
-				Quiet=True,Threshold=0.0,WindowUnits='s',
-				OneSided=True,Steps=None):
+def Spectrogram(t,v,wind,slip,**kwargs):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -74,6 +71,20 @@ def Spectrogram(t,v,wind,slip,WindowFunction=None,Param=None,
 				Real : Real component at each frequency in each window, shape (Nw,LenW)
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''
+	
+	Tax = kwargs.get('Tax',None)
+	WindowFunction = kwargs.get('WindowFunction',None)
+	Param = kwargs.get('Param',None)
+	FreqLim = kwargs.get('FreqLim',None)
+	Detrend = kwargs.get('Detrend',True)
+	FindGaps = kwargs.get('FindGaps',True)
+	GoodData = kwargs.get('GoodData',None)
+	Quiet = kwargs.get('Quiet',True)
+	Threshold = kwargs.get('Threshold',0.0)
+	WindowUnits = kwargs.get('WindowUnits','s')
+	OneSided = kwargs.get('OneSided',True)
+	Steps = kwargs.get('Steps',None)
+
 
 	#find out the length of the array and 
 	Tlen = np.size(t)
@@ -91,8 +102,16 @@ def Spectrogram(t,v,wind,slip,WindowFunction=None,Param=None,
 		Ti0 = np.array([0])
 		Ti1 = np.array([Tlen-1])
 
+	#check if we have a predefined time axis
+	if not Tax is None:
+		Nw = Tax.size
+		ngd = 1
+		Nwind = np.array([Nw])
+		Ti0 = np.array([0])
+		Ti1 = np.array([Tlen-1])
+
 	#find the number of windows
-	NwTot,LenW,LenS,Nw,Wi0,Wi1 = GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits)
+	NwTot,LenW,LenS,Nw,Wi0,Wi1,Tax = GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits)
 	
 	#find the number of frequencies
 	Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
@@ -103,7 +122,11 @@ def Spectrogram(t,v,wind,slip,WindowFunction=None,Param=None,
 		find = np.arange(Nf).astype('int32')
 	else:
 		find = np.where((Freq >= FreqLim[0]) & (Freq <= FreqLim[1]))[0]
-		Nf = usef.size
+		if find[-1] == Freq.size-1:
+			find = find[:-1]
+		Freq = np.append(Freq[find],Freq[find[-1]+1])
+		print(Freq.size)
+		Nf = find.size
 
 
 	#create the output arrays
@@ -181,5 +204,5 @@ def Spectrogram(t,v,wind,slip,WindowFunction=None,Param=None,
 	if not Quiet:
 		print('')
 			
-	return NwTot,LenW,Freq,out
+	return NwTot,Freq,out
 	

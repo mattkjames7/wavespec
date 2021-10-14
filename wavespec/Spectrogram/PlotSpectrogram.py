@@ -7,17 +7,17 @@ from .DetectGaps import DetectGaps
 from ..Tools.UTPlotLabel import UTPlotLabel
 import DateTimeTools as TT
 
+from .. import Fourier
+from .. import LombScargle
+from .. import CrossPhase
+
 def _mode(x):
 	u,c = np.unique(x,return_counts=True)
 	return u[c.argmax()]
 	
 
 
-def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
-					Param=None,Detrend=True,FindGaps=True,GoodData=None,
-					Quiet=True,LenW=None,fig=None,maps=[1,1,0,0],PlotType='Pow',
-					scale=None,zlog=False,TimeAxisUnits='s',FreqAxisUnits='Hz',
-					nox=False,Threshold=0.0,Fudge=False,OneSided=True):
+def PlotSpectrogram(*args,**kwargs):
 	'''
 	Plots a spectrogram by calling the "Spectrogram" routine which
 	creates a spectogram using a sliding window.
@@ -100,104 +100,14 @@ def PlotSpectrogram(t,v,wind,slip,Freq=None,Method='FFT',WindowFunction=None,
 				Real : Real component at each frequency in each window, shape (Nw,LenW)
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''	
-	
-	
-	Nw,LenW,Freq,Spec = Spectrogram(t,v,wind,slip,Freq,Method,WindowFunction,Param,Detrend,FindGaps,GoodData,Quiet,LenW,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
-	Nf = Freq.size - 1
-
-	#select the parameter to plot
-	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
-		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
-		PlotType = 'Pow'
-	S = Spec[PlotType]
-	
-	#scale the time axis
-	if TimeAxisUnits == 'h':
-		ts = Spec.Tspec/3600.0
-		xlabel = 'Time (h)'
-	elif TimeAxisUnits in ['hh:mm','hh:mm:ss']:
-		ts = Spec.Tspec/3600.0
-		xlabel = 'Time'
+	if Method == 'FFT':
+		return Fourier.PlotSpectrogram(*args,**kwargs)
+	elif Method == 'LS':
+		return LombScargle.PlotSpectrogram(*args,**kwargs)
+	elif Method == 'CP-FFT':
+		return CrossPhase.PlotSpectrogramFFT(*args,**kwargs)
+	elif Method == 'CP-LS':
+		return CrossPhase.PlotSpectrogramLS(*args,**kwargs)
 	else:
-		ts = Spec.Tspec
-		xlabel = 'Time (s)'
-	dt = _mode(ts[1:] - ts[:-1])/2.0
-	
-	
-	#find gaps
-	gaps = np.where(np.isfinite(Spec.Pow[:,1]) == False)[0]
-	ngd,T0,T1 = DetectGaps(Spec.Pow[:,1])
-	
-
-	
-	#set the frequency
-	if FreqAxisUnits == 'Hz':
-		f = Freq[:Nf+1]
-	elif FreqAxisUnits == 'mHz':
-		f = Freq[:Nf+1]*1000.0
-	else:
-		print('Frequency axis units {:s} not recognised, defaulting to "Hz"'.format(FreqAxisUnits))
-		f = Freq[:Nf+1]
-	
-	#set the z (colour) scale
-	zunits = { 'Pow' : 'Power',
-			   'Pha' : 'Phase',
-			   'Amp' : 'Amplitude',
-			   'Real' : 'Real Component',
-			   'Imag' : 'Imaginary Component'}
-	zlabel = zunits[PlotType]
-	if scale is None:
-		scale = [np.nanmin(S),np.nanmax(S)]
-	if zlog:
-		if scale == 0.0:
-			scale[0] = np.nanmin(S[(S > 0) & np.isfinite(S)])
-		norm = colors.LogNorm(vmin=scale[0],vmax=scale[1])
-
-	else:
-		norm = colors.Normalize(vmin=scale[0],vmax=scale[1])	
-	
-	#create the plot
-	if fig is None:
-		fig = plt
-		fig.figure()
-	ax = fig.subplot2grid((maps[1],maps[0]),(maps[3],maps[2]))
-	cmap = plt.cm.get_cmap('gnuplot')
-	
-	
-	#loop through each good section
-	sm = None
-	for i in range(0,ngd):
-		#select the good portion of the 
-		use = np.arange(T0[i],T1[i]+1)
-		tax = np.append(ts[use]-dt,ts[use[-1]]+dt)
-		Stmp = S[use]
-		
-		
-		#mesh the axes
-		tm,fm = np.meshgrid(tax,f)
-		#plot the section
-		sm = ax.pcolormesh(tm.T,fm.T,Stmp,cmap=cmap,norm=norm)
-
-	#colour bar
-	fig.subplots_adjust(right=0.8)
-	box = ax.get_position()
-	if not sm is None:
-		cax = plt.axes([0.05*box.width + box.x1,box.y0+0.1*box.height,box.width*0.025,box.height*0.8])
-		cbar = fig.colorbar(sm,cax=cax)
-		cbar.set_label(zlabel)
-		
-	#axis labels
-	ax.set_xlabel(xlabel)
-	ax.set_ylabel('$f$ ('+FreqAxisUnits+')')
-		
-	#sort the time axis out
-	if nox:
-		ax.xaxis.set_visible(False)
-	else:
-		if TimeAxisUnits in ['hh:mm','hh:mm:ss']:
-			#UTPlotLabel(ax,axis='x',seconds=(TimeAxisUnits == 'hh:mm:ss'))
-			TT.DTPlotLabel(ax)
-			ax.set_xlabel('UT')	
-
-			
-	return ax,Nw,LenW,Freq,Spec
+		print('Method not supported')
+		return None

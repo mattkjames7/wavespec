@@ -9,6 +9,7 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..Tools.mode import mode
 from ..Tools.DetectGaps import DetectGaps
+from ..Spectrogram.SpectrogramPlotter import SpectrogramPlotter
 
 
 def Spectrum():
@@ -110,6 +111,107 @@ def Spectrogram():
 		
 	#spectrogram
 	ax1,Nw,Freq,Spec = LS.PlotSpectrogram(t,v,wind,slip,Freq=freq,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
+	ax1.set_ylim(0,fmx*1000)
+	
+def Spectrogram2():
+	
+	#pick two frequencies
+	f0 = 0.002
+	f1 = 0.005
+	
+	#amplitudes
+	A0 = 2.0
+	A1 = 1.5
+
+	#phases
+	p0 = np.pi/2.0
+	p1 = 0.0
+	
+	#time series
+	t = np.arange(10800.0)
+	dt = np.random.rand(t.size)*5
+	t = t + dt
+	t.sort()
+
+	v0 = A0*np.cos(2*np.pi*f0*t + p0)
+	v1 = A1*np.cos(2*np.pi*f1*t + p1)
+	v = v0 + v1
+	
+	wind = 1800
+	slip = 200
+
+	#frequencies
+	freq = np.arange(900,dtype='float32')/(np.float32(1800*1.0))
+	
+
+	#figure
+	fig = plt
+	fig.figure(figsize=(8,11))
+	
+	ax0 = fig.subplot2grid((2,1),(0,0))
+	ax1 = fig.subplot2grid((2,1),(1,0))
+
+	ax0.plot(t,v0,color='red',linestyle='--')
+	ax0.plot(t,v1,color='orange',linestyle='--')
+	ax0.plot(t,v,color='black',linestyle='-')
+	ax0.set_xlabel('Time (s)')
+		
+	Nw,Freq,Spec = LS.Spectrogram(t,v,wind,slip,Freq=freq)
+		
+	#spectrogram
+	ax1,Nw,Freq,Spec = LS.PlotSpectrogram(Freq,Spec,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
+	ax1.set_ylim(0,fmx*1000)
+	
+	
+def Spectrogram3():
+	
+	#pick two frequencies
+	f0 = 0.002
+	f1 = 0.005
+	
+	#amplitudes
+	A0 = 2.0
+	A1 = 1.5
+
+	#phases
+	p0 = np.pi/2.0
+	p1 = 0.0
+	
+	#time series
+	t = np.arange(10800.0)
+	dt = np.random.rand(t.size)*5
+	t = t + dt
+	t.sort()
+
+	v0 = A0*np.cos(2*np.pi*f0*t + p0)
+	v1 = A1*np.cos(2*np.pi*f1*t + p1)
+	v = v0 + v1
+	
+	wind = 1800
+	slip = 200
+
+	#frequencies
+	freq = np.arange(900,dtype='float32')/(np.float32(1800*1.0))
+	
+
+	#figure
+	fig = plt
+	fig.figure(figsize=(8,11))
+	
+	ax0 = fig.subplot2grid((2,1),(0,0))
+	ax1 = fig.subplot2grid((2,1),(1,0))
+
+	ax0.plot(t,v0,color='red',linestyle='--')
+	ax0.plot(t,v1,color='orange',linestyle='--')
+	ax0.plot(t,v,color='black',linestyle='-')
+	ax0.set_xlabel('Time (s)')
+		
+	Nw,Freq,Spec = LS.Spectrogram(t,v,wind,slip,Freq=freq)
+		
+	#spectrogram
+	ax1 = SpectrogramPlotter(Spec.Tspec,Freq*1000,Spec.Pow,fig=fig,maps=[1,2,0,1])
 	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
 	ax1.set_ylim(0,fmx*1000)
 	

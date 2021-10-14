@@ -1,7 +1,9 @@
 import numpy as np
 from .Spectrogram import Spectrogram
 
-def Spectrogram3D(t,vx,vy,vz,wind,slip,CombineComps=False,**kwargs):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
+
+	CombineComps = kwargs.get('CombineComps',False)
 
 	#Calculate the three sets of spectra
 	Nw,LenW,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)

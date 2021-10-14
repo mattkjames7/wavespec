@@ -5,10 +5,7 @@ from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
 from ..Tools.GetWindows import GetLSWindows
 
-def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
-				Param=None,FreqLim=None,Detrend=True,FindGaps=True,
-				GoodData=None,Quiet=True,Threshold=0.0,Fudge=False,
-				Tax=None,Steps=None):
+def Spectrogram(t,v,wind,slip,**kwargs):
 	'''
 	Creates a spectogram using a sliding window.
 	
@@ -75,6 +72,21 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''
 
+	Fudge = kwargs.get('Fudge',False)
+	Tax = kwargs.get('Tax',None)
+	WindowFunction = kwargs.get('WindowFunction',None)
+	Param = kwargs.get('Param',None)
+	FreqLim = kwargs.get('FreqLim',None)
+	Freq = kwargs.get('Freq',None)
+	Detrend = kwargs.get('Detrend',True)
+	FindGaps = kwargs.get('FindGaps',True)
+	GoodData = kwargs.get('GoodData',None)
+	Quiet = kwargs.get('Quiet',True)
+	Threshold = kwargs.get('Threshold',0.0)
+	WindowUnits = kwargs.get('WindowUnits','s')
+	OneSided = kwargs.get('OneSided',True)
+	Steps = kwargs.get('Steps',None)
+
 	#find out the length of the array and 
 	Tlen = np.size(t)
 	if Tlen <= 1:
@@ -102,7 +114,9 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		Nw = Tax.size
 		ngd = 1
 		Nwind = np.array([Nw])
-
+		Ti0 = np.array([0])
+		Ti1 = np.array([Tlen-1])
+		
 	#find the number of windows
 	NwTot,Nw,Wi0,Wi1,Tax = GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax)
 	
@@ -120,7 +134,7 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		find = np.arange(Nf).astype('int32')
 	else:
 		find = np.where((Freq >= FreqLim[0]) & (Freq <= FreqLim[1]))[0]
-		Nf = usef.size
+		Nf = find.size
 
 
 	#create the output arrays
@@ -206,5 +220,5 @@ def Spectrogram(t,v,wind,slip,Freq=None,WindowFunction=None,
 		print('')			
 			
 			
-	return NwTot,Freq,out
+	return NwTot,Freq[find],out
 	
