@@ -2,7 +2,9 @@ import numpy as np
 from .. import Fourier
 from .. import LombScargle
 
-def Spectrogram3D(t,vx,vy,vz,wind,slip,Method='FFT',**kwargs):
+def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
+
+	Method = kwargs.get('Method','FFT')
 
 	if Method == 'FFT':
 		return Fourier.Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs)

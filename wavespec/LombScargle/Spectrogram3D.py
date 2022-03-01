@@ -3,7 +3,7 @@ from .Spectrogram import Spectrogram
 
 def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
 
-	CombineComps = kwargs('CombineComps',False)
+	CombineComps = kwargs.get('CombineComps',False)
 
 	#Calculate the three sets of spectra
 	Nw,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)

@@ -90,7 +90,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	#find out the length of the array and 
 	Tlen = np.size(t)
 	if Tlen <= 1:
-		return (0,0,0,0)
+		return (0,Freq,None)
 
 	#we need frequencies here, so we will assume that the data are
 	#evenly spaced and that we can use the FFT frequencies
@@ -108,6 +108,13 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		ngd = 1
 		Ti0 = np.array([0])
 		Ti1 = np.array([Tlen-1])
+	
+	if ngd == 0:
+		ngd = 1
+		Ti0 = np.array([0])
+		Ti1 = np.array([Tlen-1])
+		
+	
 
 	#check if we have a predefined time axis
 	if not Tax is None:
@@ -116,6 +123,8 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		Nwind = np.array([Nw])
 		Ti0 = np.array([0])
 		Ti1 = np.array([Tlen-1])
+		
+		
 		
 	#find the number of windows
 	NwTot,Nw,Wi0,Wi1,Tax = GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax)

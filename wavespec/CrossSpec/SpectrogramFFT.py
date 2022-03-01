@@ -1,5 +1,5 @@
 import numpy as np
-from .CrossPhase import CrossPhase
+from .CrossSpec import CrossSpec
 from ..Tools.GetWindows import GetFFTWindows
 from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
@@ -165,7 +165,7 @@ def SpectrogramFFT(t,v,wind,slip,WindowFunction=None,Param=None,
 						vw1 = PolyDetrend(tw,vw1,np.int(Detrend))
 
 
-					power,amp,phase,fr,fi,freq = CrossPhase(tw,vw0,vw1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+					power,amp,phase,fr,fi,freq = CrossSpec(tw,vw0,vw1,Freq,'FFT',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					out.Var[j+pos] = np.var(vw0) + np.var(vw1)
 				
 					out.Pow[j+pos] = power[find]
@@ -184,5 +184,5 @@ def SpectrogramFFT(t,v,wind,slip,WindowFunction=None,Param=None,
 	if not Quiet:
 		print('')
 			
-	return NwTot,LenW,Freq,out
+	return NwTot,Freq,out
 	

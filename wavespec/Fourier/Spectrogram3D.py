@@ -6,9 +6,9 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
 	CombineComps = kwargs.get('CombineComps',False)
 
 	#Calculate the three sets of spectra
-	Nw,LenW,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)
-	Nw,LenW,F,yt = Spectrogram(t,vy,wind,slip,**kwargs)
-	Nw,LenW,F,zt = Spectrogram(t,vz,wind,slip,**kwargs)
+	Nw,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)
+	Nw,F,yt = Spectrogram(t,vy,wind,slip,**kwargs)
+	Nw,F,zt = Spectrogram(t,vz,wind,slip,**kwargs)
 	Nf = F.size - 1
 	
 	#need to calculate k vector
@@ -70,4 +70,4 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
 	del yt
 	del zt
 	
-	return Nw,LenW,F,out
+	return Nw,F,out

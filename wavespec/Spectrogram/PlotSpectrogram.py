@@ -9,7 +9,7 @@ import DateTimeTools as TT
 
 from .. import Fourier
 from .. import LombScargle
-from .. import CrossPhase
+from .. import CrossSpec
 
 def _mode(x):
 	u,c = np.unique(x,return_counts=True)
@@ -100,14 +100,15 @@ def PlotSpectrogram(*args,**kwargs):
 				Real : Real component at each frequency in each window, shape (Nw,LenW)
 				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
 	'''	
+	Method = kwargs.get('Method','FFT')
 	if Method == 'FFT':
 		return Fourier.PlotSpectrogram(*args,**kwargs)
 	elif Method == 'LS':
 		return LombScargle.PlotSpectrogram(*args,**kwargs)
 	elif Method == 'CP-FFT':
-		return CrossPhase.PlotSpectrogramFFT(*args,**kwargs)
+		return CrossSpec.PlotSpectrogramFFT(*args,**kwargs)
 	elif Method == 'CP-LS':
-		return CrossPhase.PlotSpectrogramLS(*args,**kwargs)
+		return CrossSpec.PlotSpectrogramLS(*args,**kwargs)
 	else:
 		print('Method not supported')
 		return None

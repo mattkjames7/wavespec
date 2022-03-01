@@ -23,7 +23,7 @@ def DetectWavePeaks(t,f,P,Threshold,LargestPeak=False):
 		pkpwr = P[:,1:-1]*np.int32(ispeak)
 		mx = np.max(pkpwr,axis=1)
 		for i in range(0,nt):
-			ispeak[i] = pkpwr[i] == mx[i]
+			ispeak[i] = (pkpwr[i] == mx[i]) & (P[i,1:-1] > Threshold)
 	
 	#find the f and t indices of each peak
 	tind,find = np.where(ispeak)

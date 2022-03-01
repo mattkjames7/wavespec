@@ -1,5 +1,5 @@
 import numpy as np
-from .CrossPhase import CrossPhase
+from .CrossSpec import CrossSpec
 from ..Tools.GetWindows import GetFFTWindows
 from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
@@ -193,7 +193,7 @@ def SpectrogramLS(t,v,wind,slip,Freq=None,WindowFunction=None,
 						vw1 = PolyDetrend(tw,vw1,np.int(Detrend))
 
 
-					power,amp,phase,fr,fi,freq = CrossPhase(tw,vw0,vw1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
+					power,amp,phase,fr,fi,freq = CrossSpec(tw,vw0,vw1,Freq,'LS',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge,OneSided=OneSided)
 					out.Var[j+pos] = np.var(vw0) + np.var(vw1)
 				
 					out.Pow[j+pos] = power[find]

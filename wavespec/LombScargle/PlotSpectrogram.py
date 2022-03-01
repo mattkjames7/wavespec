@@ -116,9 +116,9 @@ def PlotSpectrogram(*args,**kwargs):
 	
 
 	#select the parameter to plot
-	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
-		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
-		PlotType = 'Pow'
+#	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
+#		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
+	#	PlotType = 'Pow'
 	if PlotType == 'Real':
 		S = Spec.Comp.real()
 	elif PlotType == 'Imag':
@@ -140,8 +140,8 @@ def PlotSpectrogram(*args,**kwargs):
 	
 	
 	#find gaps
-	gaps = np.where(np.isfinite(Spec.Pow[:,1]) == False)[0]
-	ngd,T0,T1 = DetectGaps(Spec.Pow[:,1])
+	gaps = np.where(np.isfinite(S[:,1]) == False)[0]
+	ngd,T0,T1 = DetectGaps(S[:,1])
 	
 
 	
@@ -160,7 +160,7 @@ def PlotSpectrogram(*args,**kwargs):
 			   'Amp' : 'Amplitude',
 			   'Real' : 'Real Component',
 			   'Imag' : 'Imaginary Component'}
-	zlabel = zunits[PlotType]
+	zlabel = zunits.get(PlotType,'')
 
 	ax = SpectrogramPlotter(ngd,T0,T1,ts,f,S,fig=fig,maps=maps,zlog=zlog,
 									scale=scale,cmap=cmap,zlabel=zlabel)

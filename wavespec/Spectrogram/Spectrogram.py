@@ -1,7 +1,7 @@
 import numpy as np
 from .. import Fourier
 from .. import LombScargle
-from .. import CrossPhase
+from .. import CrossSpec
 
 def Spectrogram(t,v,wind,slip,Method='FFT',**kwargs):
 	'''
@@ -74,9 +74,9 @@ def Spectrogram(t,v,wind,slip,Method='FFT',**kwargs):
 	elif Method == 'LS':
 		return LombScargle.Spectrogram(t,v,wind,slip,**kwargs)
 	elif Method == 'CP-FFT':
-		return CrossPhase.SpectrogramFFT(t,v,wind,slip,**kwargs)
+		return CrossSpec.SpectrogramFFT(t,v,wind,slip,**kwargs)
 	elif Method == 'CP-LS':
-		return CrossPhase.SpectrogramLS(t,v,wind,slip,**kwargs)
+		return CrossSpec.SpectrogramLS(t,v,wind,slip,**kwargs)
 	else:
 		print('Method not supported')
 		return None

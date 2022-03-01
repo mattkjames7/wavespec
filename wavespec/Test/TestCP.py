@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from ..Fourier import FFT
-from ..CrossPhase.CrossPhase import CrossPhase
+from ..CrossSpec.CrossSpec import CrossSpec
 
 def TestCP(f=0.08,phi=[0.0,50.0],Backend='C++'):
 	'''
@@ -37,8 +37,8 @@ def TestCP(f=0.08,phi=[0.0,50.0],Backend='C++'):
 
 
 	#CP
-	P0,A0,phi0,Pxyr0,Pxyi0,Freq = CrossPhase(t,y[0],y[1],None,'FFT')
-	P1,A1,phi1,Pxyr1,Pxyi1,Freq = CrossPhase(t,y[0],y[1],freq[:-1],'LS')
+	P0,A0,phi0,Pxyr0,Pxyi0,Freq = CrossSpec(t,y[0],y[1],None,'FFT')
+	P1,A1,phi1,Pxyr1,Pxyi1,Freq = CrossSpec(t,y[0],y[1],freq[:-1],'LS')
 	
 	ax1 = fig.subplot2grid((2,2),(1,0))
 	ax1.plot(freq[:-1],power0,color=[1.0,0.0,0.0],label='FFT-0')

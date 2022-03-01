@@ -6,7 +6,7 @@ from . import LombScargle
 from . import Fourier
 from . import Test
 from . import Spectrogram
-from . import CrossPhase
+from . import CrossSpec
 from . import Filter
 from . import PCA
 from . import DetectWaves

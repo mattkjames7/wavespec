@@ -3,7 +3,7 @@ from ..LombScargle.LombScargle import LombScargle
 from ..Fourier.FFT import FFT
 
 
-def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Threshold=0.0,Fudge=False,OneSided=False):
+def CrossSpec(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Threshold=0.0,Fudge=False,OneSided=False):
 	'''
 	This procedure will perform crossphase analysis of two time series
 	using the method described in Waters et al., 1991 
@@ -68,7 +68,7 @@ def CrossPhase(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Thres
 	#calculate crossphase power
 	Pxyr = Xr*Yr
 	Pxyi = -Xi*Yi
-	Pxy = Pxyi**2 + Pxyr**2
+	Pxy = np.abs(Pxyi**2 + Pxyr**2)
 	
 	#calculate phase
 	phixy = np.arctan2(Pxyi,Pxyr)	

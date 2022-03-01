@@ -104,15 +104,15 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 
 	#check if we have a predefined time axis
 	if not Tax is None:
-		Nw = Tax.size
+		NwTot = Tax.size
 		ngd = 1
-		Nwind = np.array([Nw])
+		Nw = np.array([NwTot])
 		Ti0 = np.array([0])
 		Ti1 = np.array([Tlen-1])
 
 	#find the number of windows
 	NwTot,LenW,LenS,Nw,Wi0,Wi1,Tax = GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits)
-	
+
 	#find the number of frequencies
 	Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
 	if OneSided:
@@ -138,7 +138,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 				('Size','int32'),			#Number of valid (finite) values used to create spectrum
 				('Good','float32'),			#Fraction of good data
 				('Var','float32'),]			#Variance
-	out = np.recarray(Nw,dtype=dtype)
+	out = np.recarray(NwTot,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
 	

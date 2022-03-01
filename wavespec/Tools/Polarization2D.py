@@ -1,6 +1,6 @@
 import numpy as np
 
-def Polarization2D(xPow,xPha,yPow,yPha):
+def Polarization2D(xPow,xPha,yPow,yPha,ReturnType='tuple'):
 	'''
 	Calculates approximate wave amplitudes, eccentricity and polarization
 	direction using the power and phase in two dimensions.
@@ -22,6 +22,7 @@ def Polarization2D(xPow,xPha,yPow,yPha):
 	Ay : Amplitude in y direction
 	Axi : Amplitude in xi direction
 	Aeta : Amplitude in eta direction
+	psi : 
 	e : eccentricity
 	direction : +1 = right-handed, -1 = left-handed, 0 = perfectly linear
 	
@@ -65,5 +66,16 @@ def Polarization2D(xPow,xPha,yPow,yPha):
 	#of the wave around the z axis
 	direction = np.sign(((delta % (2*np.pi)))-np.pi)
 	
+	if ReturnType == 'dict':
+		out = {}
+		out['Ax'] = Ax
+		out['Ay'] = Ay
+		out['Axi'] = Axi
+		out['Aeta'] = Aeta
+		out['psi'] = psi
+		out['e'] = e
+		out['direction'] = direction
+	else:
+		out = (Ax,Ay,Axi,Aeta,psi,e,direction)	
 	
-	return (Ax,Ay,Axi,Aeta,psi,e,direction)	
+	return out

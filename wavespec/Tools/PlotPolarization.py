@@ -58,6 +58,7 @@ def PlotPolarization(t,Ax,Ay,Px,Py,Dir,fig=None,maps=[1,1,0,0],Multiplier=1.0,no
 			TT.DTPlotLabel(ax)
 			ax.set_xlabel(xlabel)
 	lbl = ax.get_yticklabels()
+	ax.set_yticks(ax.get_yticks())
 	ax.set_yticklabels(['']*np.size(lbl))
 	
 	return ax

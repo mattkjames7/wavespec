@@ -4,8 +4,16 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..Tools.mode import mode
 
-def SpectrogramPlotter(*args,fig=None,maps=[1,1,0,0],zlog=False,
-						scale=None,cmap='gnuplot',zlabel=''):
+def SpectrogramPlotter(*args,**kwargs):
+
+	fig = kwargs.get('fig',None)
+	maps = kwargs.get('maps',[1,1,0,0])
+	scale = kwargs.get('scale',None)
+	zlog = kwargs.get('zlog',False)
+	zlabel = kwargs.get('zlabel','')
+	cmap = kwargs.get('cmap','gnuplot')
+	
+
 	
 	#two options:
 	if len(args) == 3:
@@ -16,12 +24,15 @@ def SpectrogramPlotter(*args,fig=None,maps=[1,1,0,0],zlog=False,
 			tax = np.append(ts-dt,ts[-1]+dt)
 		else:
 			tax = ts
+		tlim = [tax[0],tax[-1]]
+
 		MultiSpec = False
 	else:
 		#2 - split into multiple spectra
 		ngd,T0,T1,ts,f,S = args
 		dt = mode(ts[1:] - ts[:-1])/2.0
 		MultiSpec = True
+		tlim = [ts[0],ts[-1]+dt]
 
 	#check that f is the right length
 	if f.size == S.shape[1]:
@@ -30,7 +41,16 @@ def SpectrogramPlotter(*args,fig=None,maps=[1,1,0,0],zlog=False,
 
 
 	if scale is None:
-		scale = [np.nanmin(S),np.nanmax(S)]
+		if zlog:
+			lS = np.log10(S)
+			lS[np.isinf(lS)] = np.nan
+			muS = np.nanmean(lS)
+			sgS = np.nanstd(lS)
+			scale = 10**np.array([muS-1.0*sgS,muS+1.0*sgS])
+			if (np.isfinite(scale) == False).any():
+				scale=[0.1,10.0]
+		else:
+			scale = [np.nanmin(S),np.nanmax(S)]
 	if zlog:
 		if scale[0] == 0.0:
 			scale[0] = np.nanmin(S[(S > 0) & np.isfinite(S)])
@@ -65,6 +85,7 @@ def SpectrogramPlotter(*args,fig=None,maps=[1,1,0,0],zlog=False,
 		#plot the section
 		sm = ax.pcolormesh(tm.T,fm.T,S,cmap=cmap,norm=norm)		
 
+	
 	#colour bar
 	fig.subplots_adjust(right=0.8)
 	box = ax.get_position()
@@ -73,4 +94,5 @@ def SpectrogramPlotter(*args,fig=None,maps=[1,1,0,0],zlog=False,
 		cbar = fig.colorbar(sm,cax=cax)
 		cbar.set_label(zlabel)
 	
+	ax.set_xlim(tlim)
 	return ax
