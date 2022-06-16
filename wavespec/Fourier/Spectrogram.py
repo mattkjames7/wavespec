@@ -90,7 +90,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	#find out the length of the array and 
 	Tlen = np.size(t)
 	if Tlen <= 1:
-		return (0,0,0,0)
+		return None
 
 	#work out the time resolution - let's hope that it is constant
 	Res = t[1] - t[0]
