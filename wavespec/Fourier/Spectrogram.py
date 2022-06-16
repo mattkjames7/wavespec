@@ -1,7 +1,6 @@
 import numpy as np
 from .FFT import FFT
-from ..Tools.GetWindows import GetFFTWindows
-from ..Tools.DetectGaps import DetectGaps
+from ._GetFFTWindows import _GetFFTWindows
 from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
 
@@ -9,16 +8,24 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	'''
 	Creates a spectogram using a sliding window.
 	
+	NOTE: The descriptions below use the units s and Hz for a Fourier
+	transform of time-series data. For spatial FFTs replace with 
+	appropriate units (e.g. m and m^-1).
+	
 	Inputs
 	======
-		t : time array in seconds
-		v : array of values the same length as t. If using crossphase,
-			this should be a list or tuple containing two arrays.
-	 wind : sliding window length in seconds
-	 slip : difference in time between the start of one window and the 
-			next - when slip < wind, each window will have an overlap,
-			when slip > wind, there will be gaps where some data will be 
-			unused and when slip == wind, each window is adjacent in time.
+	t : float
+		Time array in seconds - must be equally spaced!
+	v : float
+		Time-series data to be transformed.
+	wind : float
+		Sliding window length in seconds.
+	slip : float
+		Difference in time between the start of one window and the 
+		next - when slip < wind, each window will have an overlap,
+		when slip > wind, there will be gaps where some data will be 
+		unused and when slip == wind, each window is adjacent in time.
+		This parameter will be ignored if the Tax keyword is set.
 	
 	Keyword Arguments
 	=================
@@ -42,10 +49,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	Quiet : bool
 			When set to True, the function produces no stdout output; 
 			when False, stdout shows the progress.
-#	LenW : 	#
-			#This can be set to an integer value in order to force a specific
-			#window length (the number of elements, as opposed to the length
-			#in time defined using wind)
 	Threshold:	If set to a value above 0, then all values which 
 			correspond to frequencies where the amplitude is less than
 			Threshold are set to 0, effectively removing noise from the
@@ -78,11 +81,9 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	Param = kwargs.get('Param',None)
 	FreqLim = kwargs.get('FreqLim',None)
 	Detrend = kwargs.get('Detrend',True)
-	FindGaps = kwargs.get('FindGaps',True)
 	GoodData = kwargs.get('GoodData',None)
 	Quiet = kwargs.get('Quiet',True)
 	Threshold = kwargs.get('Threshold',0.0)
-	WindowUnits = kwargs.get('WindowUnits','s')
 	OneSided = kwargs.get('OneSided',True)
 	Steps = kwargs.get('Steps',None)
 

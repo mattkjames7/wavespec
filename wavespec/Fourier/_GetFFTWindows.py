@@ -27,6 +27,23 @@ def _GetFFTWindows(t,Res,wind,slip,Tax):
 		middle of each window. Any from outside of the limits of t will 
 		be removed.
 	
+	Returns
+	=======
+	nw : int
+		The number of windows.
+	lw : int
+		The length of a window in elements.
+	ls : int 
+		The number of elements separating each window.
+	i0 : int
+		Array of start indices for each window.
+	i1 : int
+		Array of end indices for each window (i0 + lw).
+
+	NOTE: to select the correct number of elements of the array for a
+	specific window, e.g.:
+	w = 3
+	tw = t[i0[w]:i1[w]]
 	
 	'''
 	
