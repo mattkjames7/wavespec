@@ -53,7 +53,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 			correspond to frequencies where the amplitude is less than
 			Threshold are set to 0, effectively removing noise from the
 			spectra.
-	OneSided: (FFT Only!)
+	OneSided: 
 			This should be set to remove the negative frequencies in
 			the second half of the spectra. In doing so, the amplitudes
 			are doubled and the powers are quadrupled.
@@ -63,17 +63,30 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 									
 	Returns
 	=======
-	Nw : Total number of time windows in the output array
-	LenW : Length of a time window (number of elements)
-	Freq : Array of frequencies in Hz.
-	numpy.recarray : 
-			Stores the output of the transform under the following fields:
-				Tspec : Time in seconds of the middle of each time window
-				Pow : Power at each frequency in each window, shape (Nw,LenW)
-				Pha : Phase at each frequency in each window, shape (Nw,LenW)
-				Amp : Amplitude at each frequency in each window, shape (Nw,LenW)
-				Real : Real component at each frequency in each window, shape (Nw,LenW)
-				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
+	Nw : int 
+		Total number of time windows in the output array
+	Freq : float
+		Array of frequencies in Hz.
+	out : numpy.recarray
+		Stores the output of the transform under the following fields:
+			Tspec : float
+				Time in seconds of the middle of each time window
+			Pow : float
+				Power at each frequency in each window, shape (Nw,LenW)
+			Pha : float
+				Phase at each frequency in each window, shape (Nw,LenW)
+			Amp : float 
+				Amplitude at each frequency in each window, shape (Nw,LenW)
+			Real : float
+				Real component at each frequency in each window, shape (Nw,LenW)
+			Imag : float
+				Imaginary component at each frequency in each window, shape (Nw,LenW)
+			Var : float
+				Variance of dat within each window
+			Good : float
+				Fraction of good data in each window.
+			Size : int
+				Number of elements in window.
 	'''
 	
 	Tax = kwargs.get('Tax',None)
@@ -96,24 +109,15 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	#work out the time resolution - let's hope that it is constant
 	Res = t[1] - t[0]
 
-	#detect and gaps in the input data
-	if FindGaps:
-		ngd,Ti0,Ti1 = DetectGaps(v,GoodData)
+	#detect good/bad data
+	if GoodData is None:
+		good = np.where(np.isfinite(v))[0]
 	else:
-		ngd = 1
-		Ti0 = np.array([0])
-		Ti1 = np.array([Tlen-1])
+		good = np.where(GoodData)[0]
+			
+	#get the windows and their indices etc.
+	Nw,LenW,ls,i0,i1,Tmid = _GetFFTWindows(t,Res,wind,slip,Tax=Tax)
 
-	#check if we have a predefined time axis
-	if not Tax is None:
-		NwTot = Tax.size
-		ngd = 1
-		Nw = np.array([NwTot])
-		Ti0 = np.array([0])
-		Ti1 = np.array([Tlen-1])
-
-	#find the number of windows
-	NwTot,LenW,LenS,Nw,Wi0,Wi1,Tax = GetFFTWindows(t,wind,slip,ngd,Ti0,Ti1,WindowUnits)
 
 	#find the number of frequencies
 	Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
@@ -127,7 +131,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		if find[-1] == Freq.size-1:
 			find = find[:-1]
 		Freq = np.append(Freq[find],Freq[find[-1]+1])
-		print(Freq.size)
 		Nf = find.size
 
 
@@ -140,71 +143,51 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 				('Size','int32'),			#Number of valid (finite) values used to create spectrum
 				('Good','float32'),			#Fraction of good data
 				('Var','float32'),]			#Variance
-	out = np.recarray(NwTot,dtype=dtype)
+	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
 	
-	#Populate the time axis
-	nd = 0
-	pos = 0
-	for i in range(0,ngd):
-		if nd > 0:
-			#this bit adds a load of NaNs in a gap in the middle of two good sections
-			out.Tspec[pos] = (out.Tspec[pos-1] + t[Ti0[i]] + wind/2.0)/2.0
-			pos+=1
-		
-		if Nw[i] > 0:
-			out.Tspec[pos:pos+Nw[i]] = np.arange(Nw[i],dtype='float64')*slip + wind/2.0 + t[Ti0[i]]
-			pos += Nw[i]
-			nd += 1
 				
-	#loop through each good secion of the time series and FFT
-	nd=0
-	pos=0
+	#loop through each window and FFT
 	ind0 = np.arange(LenW).astype('int32')
-	for i in range(0,ngd):
-		if nd > 0:
-			#this bit adds a load of NaNs in a gap in the middle of two good sections
-			pos+=1
-		
-		if Nw[i] > 0:
-			#loop through each window
-			for j in range(0,Nw[i]):
-				#get the data for this window
-				ind = Wi0[i][j] + ind0
-				tw = t[ind]
-				vw = v[ind]
+	for i in range(0,Nw):
+		#get the data for this window
+		ind = np.arange(i0[i],i1[i])
+		tw = t[ind]
+		vw = v[ind]
+		gd = good[ind]
+			
+		ngd = np.sum(gd)	
+		bad = ngd != LenW
 				
-				bad = (np.isfinite(vw) == False).any()
-				
-				#assuming everything is good, go ahead with the FFT
-				if not bad:
-					#remove steps and					
-					#detrend if necessary
-					if not Steps is None:
-						vw = RemoveStep(tw,vw,Steps[ind],2,5)						
-					if Detrend:
-						vw = PolyDetrend(tw,vw,np.int(Detrend))
+		#assuming everything is good, go ahead with the FFT
+		if not bad:
+			#detrend if necessary
+	
+			if Detrend:
+				vw = PolyDetrend(tw,vw,np.int(Detrend))
 
 					
-					power,amp,phase,fr,fi,freq = FFT(tw,vw,WindowFunction,Param,Threshold=Threshold,OneSided=OneSided)
-					out.Var[j+pos] = np.var(vw)
-				
-					out.Pow[j+pos] = power[find]
-					out.Pha[j+pos] = phase[find]
-					out.Amp[j+pos] = amp[find]
-					out.Comp[j+pos] = fr[find] + 1j*fi[find]
-					out.Size[j+pos] = ind.size
-					out.Good[j+pos] = 1.0
-				else:
-					out[j+pos].Size = 0
-				if not Quiet:
-					print('\r{:6.2f}%'.format(100.0*np.float32(pos+j+1)/NwTot),end='')
+			power,amp,phase,fr,fi,freq = FFT(tw,vw,WindowFunction,Param,
+								Threshold=Threshold,OneSided=OneSided)
+			out.Var[i] = np.var(vw)
+		
+			out.Pow[i] = power[find]
+			out.Pha[i] = phase[find]
+			out.Amp[i] = amp[find]
+			out.Comp[i] = fr[find] + 1j*fi[find]
+			out.Size[i] = LenW
+			out.Good[i] = 1.0
+		else:
+			out[i].Var = np.nanvar(vw)
+			out[i].Size = LenW
+			out[i].Good = ngd/LenW
+		if not Quiet:
+			print('\r{:6.2f}%'.format(100.0*np.float32(i+1)/Nw),end='')
 	
-			pos += Nw[i]
-			nd += 1
+
 	if not Quiet:
 		print('')
 			
-	return NwTot,Freq,out
+	return Nw,Freq,out
 	
