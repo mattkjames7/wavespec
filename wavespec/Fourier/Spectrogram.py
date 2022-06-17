@@ -120,7 +120,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 
 
 	#find the number of frequencies
-	Freq = np.arange(LenW+1,dtype='float32')/(LenW*Res)
+	Freq = np.arange(LenW+1,dtype='float64')/(LenW*Res)
 	if OneSided:
 		Freq = Freq[:LenW//2 + 1]	
 	if FreqLim is None:
@@ -136,13 +136,13 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 
 	#create the output arrays
 	dtype = [	('Tspec','float64'),		#mid point in time of the current window
-				('Pow','float32',(Nf,)),	#Power spectra
-				('Pha','float32',(Nf,)),	#phase spectra
-				('Amp','float32',(Nf,)),	#Amplitude
-				('Comp','complex64',(Nf,)),	#Real and Imaginary components of spectra
-				('Size','int32'),			#Number of valid (finite) values used to create spectrum
-				('Good','float32'),			#Fraction of good data
-				('Var','float32'),]			#Variance
+				('Pow','float64',(Nf,)),	#Power spectra
+				('Pha','float64',(Nf,)),	#phase spectra
+				('Amp','float64',(Nf,)),	#Amplitude
+				('Comp','complex128',(Nf,)),	#Real and Imaginary components of spectra
+				('Size','int64'),			#Number of valid (finite) values used to create spectrum
+				('Good','float64'),			#Fraction of good data
+				('Var','float64'),]			#Variance
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
