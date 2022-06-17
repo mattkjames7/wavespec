@@ -5,4 +5,4 @@
 #include <math.h>
 
 #endif
-void ComplexLS(int lent, int lenw, float *time, float *data, float *omega, float *amplitude, float *phase, float *a, float *b);
+void ComplexLS(int lent, int lenw, double *time, double *data, double *omega, double *amplitude, double *phase, double *a, double *b);
