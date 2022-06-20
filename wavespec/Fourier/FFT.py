@@ -7,30 +7,43 @@ def FFT(t,x,WindowFunction=None,Param=None,Threshold=0.0,OneSided=False):
 	
 	Inputs
 	======
-	t:		time array
-	x:		time series data
-	WindowFunction : Select a window function to apply to the data before 
+	t :	float
+		time array
+	x : float
+		time series data
+	WindowFunction : str 
+			Select a window function to apply to the data before 
 			the transform, the options are: 'none','cosine-bell','hamming',
 			'triangle','welch','blackman','nuttall','blackman-nuttall',
 			'flat-top','cosine','gaussian'			
-	Param : This parameter is used to alter some of the window functions
+	Param : float
+			This parameter is used to alter some of the window functions
 			(see WindowFunctions.py).
-	Threshold:	If set to a value above 0, then all values which 
+	Threshold : float
+			If set to a value above 0, then all values which 
 			correspond to frequencies where the amplitude is less than
 			Threshold are set to 0, effectively removing noise from the
 			spectra.
-	OneSided: This should be set to remove the negative frequencies in
+	OneSided : bool 
+			This should be set to remove the negative frequencies in
 			the second half of the spectra. In doing so, the amplitudes
 			are doubled and the powers are quadrupled.
-						
+
+									
 	Returns
 	=======
-	power: array of powers for each frequency
-	A: array of amplitudes
-	phase: array of phases for each frequency
-	fr: real component of the FFT
-	fi: imaginary component of the FFT
-	freq: array of frequencies
+	power : float
+		array of powers for each frequency
+	A : float
+		array of amplitudes
+	phase : float
+		array of phases for each frequency
+	fr : float
+		real component of the FFT
+	fi : float
+		imaginary component of the FFT
+	freq : float
+		array of frequencies
 	'''
 	
 	#find out the array length (l) and the interval between each value (i)

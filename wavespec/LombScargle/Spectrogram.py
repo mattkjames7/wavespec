@@ -9,67 +9,96 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	'''
 	Creates a spectogram using a sliding window.
 	
+	NOTE: The descriptions below use the units s and Hz for a Fourier
+	transform of time-series data. For spatial FFTs replace with 
+	appropriate units (e.g. m and m^-1).
+	
 	Inputs
 	======
-		t : time array in seconds
-		v : array of values the same length as t. If using crossphase,
-			this should be a list or tuple containing two arrays.
-	 wind : sliding window length in seconds
-	 slip : difference in time between the start of one window and the 
-			next - when slip < wind, each window will have an overlap,
-			when slip > wind, there will be gaps where some data will be 
-			unused and when slip == wind, each window is adjacent in time.
-	 Freq : a list of frequencies (Hz) to solve for - only does anything
-			when using L-S
-	Method : Currently either 'FFT' or 'LS'
-	WindowFunction : Select a window function to apply to the data before 
-			the transform, the options are: 'none','cosine-bell','hamming',
-			'triangle','welch','blackman','nuttall','blackman-nuttall',
-			'flat-top','cosine','gaussian'			
-	Param : This parameter is used to alter some of the window functions
+	t : float
+		Time array in seconds - must be equally spaced!
+	v : float
+		Time-series data to be transformed.
+	wind : float
+		Sliding window length in seconds.
+	slip : float
+		Difference in time between the start of one window and the 
+		next - when slip < wind, each window will have an overlap,
+		when slip > wind, there will be gaps where some data will be 
+		unused and when slip == wind, each window is adjacent in time.
+		This parameter will be ignored if the Tax keyword is set.
+	
+	Keyword Arguments
+	=================
+	Freq : float|None
+			Array of frequencies to calcualt ethe L-S pewriodogram at. 
+			If None then the function will attempt to guess a decent
+			frequency array based on the window size and the mean or
+			mode time resolution.
+	FreqLim : None|float
+			2-element array denoting the minimum and maximum frequency 
+			to use.
+	WindowFunction : None|str
+			Select a window function to apply to the data before the 
+			transform, the options are: 
+			'none','cosine-bell','hamming','triangle','welch',
+			'blackman','nuttall','blackman-nuttall','flat-top','cosine',
+			'gaussian'			
+	Param : float
+			This parameter is used to alter some of the window functions
 			(see WindowFunctions.py).
-	Detrend : This will linearly detrend each time window before the 
-			transform.
-	FindGaps : This tells the routine to scan for data gaps, when set
-			to False - the data are assumed to be perfect.
-	GoodData : This can be set to a boolean array which tells the DetectGaps
-			function which data points are good (True) or bad (False),
-			if set to None, then any non-finite data is assumed to be bad.
-	Quiet : When set to True, the function produces no stdout output; when
-			False, stdout shows the progress.
-	LenW : This can be set to an integer value in order to force a specific
-			window length (the number of elements, as opposed to the length
-			in time defined using wind)
+	Detrend : bool|int
+			This will detrend using a polynomial (the degree of which is
+			given by the Detrend keyword, e.g. Detrend=2 for quadratic)
+			each time window before the transform.
+	GoodData : bool
+			This can be set to a boolean array which tells the function 
+			which data points are good (True) or bad (False), if set to 
+			None, then any non-finite data is assumed to be bad.
+	Quiet : bool
+			When set to True, the function produces no stdout output; 
+			when False, stdout shows the progress.
 	Threshold:	If set to a value above 0, then all values which 
 			correspond to frequencies where the amplitude is less than
 			Threshold are set to 0, effectively removing noise from the
 			spectra.
-	Fudge:	(LS Only!)
+	Tax :	float
+			An array of times at the centre of each bin. This will force
+			the program to use a specific set of windows.
+	Fudge : bool
 			This applies a fudge for when f == Nyquist frequency, because
 			small floating point numbers have relatively large errors.
 			This should only be needed if intending to reproduce a
 			two-sided FFT (also, if doing this then divide A by 2 and P 
 			by 4).
-	OneSided: (FFT Only!)
-			This should be set to remove the negative frequencies in
-			the second half of the spectra. In doing so, the amplitudes
-			are doubled and the powers are quadrupled.
-	Tax :	(LS only)
-			An array of times at the centre of each bin.
+
 									
 	Returns
 	=======
-	Nw : Total number of time windows in the output array
-	LenW : Length of a time window (number of elements)
-	Freq : Array of frequencies in Hz.
-	numpy.recarray : 
-			Stores the output of the transform under the following fields:
-				Tspec : Time in seconds of the middle of each time window
-				Pow : Power at each frequency in each window, shape (Nw,LenW)
-				Pha : Phase at each frequency in each window, shape (Nw,LenW)
-				Amp : Amplitude at each frequency in each window, shape (Nw,LenW)
-				Real : Real component at each frequency in each window, shape (Nw,LenW)
-				Imag : Imaginary component at each frequency in each window, shape (Nw,LenW)
+	Nw : int 
+		Total number of time windows in the output array
+	Freq : float
+		Array of frequencies in Hz.
+	out : numpy.recarray
+		Stores the output of the transform under the following fields:
+			Tspec : float
+				Time in seconds of the middle of each time window
+			Pow : float
+				Power at each frequency in each window, shape (Nw,LenW)
+			Pha : float
+				Phase at each frequency in each window, shape (Nw,LenW)
+			Amp : float 
+				Amplitude at each frequency in each window, shape (Nw,LenW)
+			Real : float
+				Real component at each frequency in each window, shape (Nw,LenW)
+			Imag : float
+				Imaginary component at each frequency in each window, shape (Nw,LenW)
+			Var : float
+				Variance of dat within each window
+			Good : float
+				Fraction of good data in each window.
+			Size : int
+				Number of elements in window.
 	'''
 
 	Fudge = kwargs.get('Fudge',False)
@@ -82,8 +111,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	GoodData = kwargs.get('GoodData',None)
 	Quiet = kwargs.get('Quiet',True)
 	Threshold = kwargs.get('Threshold',0.0)
-	OneSided = kwargs.get('OneSided',True)
-	Steps = kwargs.get('Steps',None)
 
 	#find out the length of the array and 
 	Tlen = np.size(t)

@@ -3,7 +3,8 @@ from ..LombScargle.LombScargle import LombScargle
 from ..Fourier.FFT import FFT
 
 
-def CrossSpec(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Threshold=0.0,Fudge=False,OneSided=False):
+def CrossSpec(t,x,y,Freq=None,Method='FFT',WindowFunction=None,
+				Param=None,Threshold=0.0,Fudge=False,OneSided=False):
 	'''
 	This procedure will perform crossphase analysis of two time series
 	using the method described in Waters et al., 1991 
@@ -18,36 +19,55 @@ def CrossSpec(t,x,y,Freq=None,Method='FFT',WindowFunction=None,Param=None,Thresh
 	
 	Inputs
 	======
-	t:	Time axis in seconds
-	x:	Time series data
-	y:	Another time series data
-	Freq:	List of frequencies to solve for (only needed for LS)
-	Method:	'LS' or 'FFT'
-	WindowFunction:	Define the window function to be used on both time series
-	Param:	Window function parameter.
-	Threshold:	If set to a value above 0, then all values which 
+	t : float
+		Time axis in seconds
+	x : float
+		Time series data
+	y :	float
+		Another time series data
+	Freq : float
+		List of frequencies to solve for (only needed for LS)
+	Method : str
+		'LS' or 'FFT'
+
+	WindowFunction : str 
+			Select a window function to apply to the data before 
+			the transform, the options are: 'none','cosine-bell','hamming',
+			'triangle','welch','blackman','nuttall','blackman-nuttall',
+			'flat-top','cosine','gaussian'			
+	Param : float
+			This parameter is used to alter some of the window functions
+			(see WindowFunctions.py).
+	Threshold : float
+			If set to a value above 0, then all values which 
 			correspond to frequencies where the amplitude is less than
 			Threshold are set to 0, effectively removing noise from the
 			spectra.
-	Fudge:	(LS Only!)
+	OneSided : bool 
+			This should be set to remove the negative frequencies in
+			the second half of the spectra. In doing so, the amplitudes
+			are doubled and the powers are quadrupled.
+	Fudge : bool
 			This applies a fudge for when f == Nyquist frequency, because
 			small floating point numbers have relatively large errors.
 			This should only be needed if intending to reproduce a
 			two-sided FFT (also, if doing this then divide A by 2 and P 
-			by 4).
-	OneSided: (FFT Only!)
-			This should be set to remove the negative frequencies in
-			the second half of the spectra. In doing so, the amplitudes
-			are doubled and the powers are quadrupled.
+			by 4). (only for LS)						
 				
 	Returns
 	=======
-	Pxy:	Power
-	Axy:	Amplitude
-	phixy:	Phase
-	Pxyr:	Real
-	Pxyi:	Imaginary
-	Freq:	Frequency
+	Pxy : float
+		Power
+	Axy : float
+		Amplitude
+	phixy : float
+		Phase
+	Pxyr : float
+		Real
+	Pxyi : float
+		Imaginary
+	Freq : float
+		Frequency
 	
 	'''
 	#check that the frequencies exist if we are using LS

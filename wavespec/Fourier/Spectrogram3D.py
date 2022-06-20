@@ -1,6 +1,6 @@
 import numpy as np
 from .Spectrogram import Spectrogram
-from ..Tools.
+from ..Tools.kVector import kVector
 
 def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
 	'''

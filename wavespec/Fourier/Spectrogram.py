@@ -29,6 +29,9 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	
 	Keyword Arguments
 	=================
+	FreqLim : None|float
+			2-element array denoting the minimum and maximum frequency 
+			to use.
 	WindowFunction : None|str
 			Select a window function to apply to the data before the 
 			transform, the options are: 
@@ -98,7 +101,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	Quiet = kwargs.get('Quiet',True)
 	Threshold = kwargs.get('Threshold',0.0)
 	OneSided = kwargs.get('OneSided',True)
-	Steps = kwargs.get('Steps',None)
 
 
 	#find out the length of the array and 
@@ -146,7 +148,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
-	
+	out.Tspec = Tax
 				
 	#loop through each window and FFT
 	ind0 = np.arange(LenW).astype('int32')
