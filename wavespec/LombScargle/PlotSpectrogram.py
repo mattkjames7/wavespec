@@ -114,11 +114,7 @@ def PlotSpectrogram(*args,**kwargs):
 		Nw,Freq,Spec = Spectrogram(t,v,wind,slip,**kwargs)
 		Nf = Freq.size - 1
 	
-
 	#select the parameter to plot
-#	if not PlotType in ['Pow','Pha','Amp','Real','Imag']: 	
-#		print('PlotType "{:s}" not recognised - defaulting to "Pow"'.format(PlotType))
-	#	PlotType = 'Pow'
 	if PlotType == 'Real':
 		S = Spec.Comp.real()
 	elif PlotType == 'Imag':
@@ -179,4 +175,4 @@ def PlotSpectrogram(*args,**kwargs):
 			ax.set_xlabel('UT')	
 
 			
-	return ax,Nw,Freq,Spec
+	return ax,Freq,Spec

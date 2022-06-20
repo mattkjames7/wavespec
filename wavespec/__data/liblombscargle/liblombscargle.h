@@ -70,6 +70,6 @@ extern "C" {
  * of the FFT.
  * 
  * ********************************************************************/
-	void LombScargleSam(float *t, float *x, int n, float *f, int nf, 
-					float *P, float *A, float *phi, float *a, float *b);
+	void LombScargleSam(double *t, double *x, int n, double *f, int nf, 
+					double *P, double *A, double *phi, double *a, double *b);
 }

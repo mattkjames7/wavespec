@@ -113,9 +113,9 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 
 	#detect good/bad data
 	if GoodData is None:
-		good = np.where(np.isfinite(v))[0]
+		good = np.isfinite(v)
 	else:
-		good = np.where(GoodData)[0]
+		good = GoodData
 			
 	#get the windows and their indices etc.
 	Nw,LenW,ls,i0,i1,Tmid = _GetFFTWindows(t,Res,wind,slip,Tax=Tax)
@@ -148,8 +148,8 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
-	out.Tspec = Tax
-				
+	out.Tspec = Tmid
+
 	#loop through each window and FFT
 	ind0 = np.arange(LenW).astype('int32')
 	for i in range(0,Nw):
@@ -158,10 +158,9 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		tw = t[ind]
 		vw = v[ind]
 		gd = good[ind]
-			
 		ngd = np.sum(gd)	
 		bad = ngd != LenW
-				
+
 		#assuming everything is good, go ahead with the FFT
 		if not bad:
 			#detrend if necessary
@@ -173,7 +172,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 			power,amp,phase,fr,fi,freq = FFT(tw,vw,WindowFunction,Param,
 								Threshold=Threshold,OneSided=OneSided)
 			out.Var[i] = np.var(vw)
-		
 			out.Pow[i] = power[find]
 			out.Pha[i] = phase[find]
 			out.Amp[i] = amp[find]

@@ -131,7 +131,8 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		good = np.where(np.isfinite(v))[0]
 	else:
 		good = np.where(GoodData)[0]
-			
+		
+
 	#get the windows and their indices etc.
 	Nw,i0,i1,Tmid = _GetLSWindows(t,wind,slip,Tax=Tax)	
 
@@ -168,15 +169,15 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
-	out.Tspec = Tax
+	out.Tspec = Tmid
 	
 
 	
 	#loop through each window and FFT
-	ind0 = np.arange(LenW).astype('int32')
 	for i in range(0,Nw):
 		#get the data for this window
 		ind = np.arange(i0[i],i1[i])
+
 		tw = t[ind]
 		vw = v[ind]
 		gd = good[ind]

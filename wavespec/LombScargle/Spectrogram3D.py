@@ -52,7 +52,7 @@ def Spectrogram3D(t,vx,vy,vz,wind,slip,**kwargs):
 	Nw,F,xt = Spectrogram(t,vx,wind,slip,**kwargs)
 	Nw,F,yt = Spectrogram(t,vy,wind,slip,**kwargs)
 	Nw,F,zt = Spectrogram(t,vz,wind,slip,**kwargs)
-	Nf = F.size
+	Nf = F.size -1
 	
 	#need to calculate k vector
 	kx,ky,kz = kVector(xt.Comp,yt.Comp,zt.Comp)

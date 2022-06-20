@@ -110,9 +110,10 @@ def Spectrogram():
 	ax0.set_xlabel('Time (s)')
 		
 	#spectrogram
-	ax1,Nw,Freq,Spec = LS.PlotSpectrogram(t,v,wind,slip,Freq=freq,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	ax1,Freq,Spec = LS.PlotSpectrogram(t,v,wind,slip,Freq=freq,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
 	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
 	ax1.set_ylim(0,fmx*1000)
+	
 	
 def Spectrogram2():
 	
@@ -160,7 +161,7 @@ def Spectrogram2():
 	Nw,Freq,Spec = LS.Spectrogram(t,v,wind,slip,Freq=freq)
 		
 	#spectrogram
-	ax1,Nw,Freq,Spec = LS.PlotSpectrogram(Freq,Spec,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	ax1,Freq,Spec = LS.PlotSpectrogram(Freq,Spec,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
 	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
 	ax1.set_ylim(0,fmx*1000)
 	

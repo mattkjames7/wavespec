@@ -49,7 +49,7 @@ def _GetLSWindows(t,wind,slip,Tax):
 	
 	#get start and end times first
 	T0 = t[0]
-	T1 = t[1]
+	T1 = t[-1]
 	
 	
 	if Tax is None:
@@ -63,33 +63,48 @@ def _GetLSWindows(t,wind,slip,Tax):
 		tmid = np.float64(Tax)
 		
 	#get the start indices
-	i0 = np.zeros(nw,dtype='float64') - 1
-	i1 = np.zeros(nw,dtype='float64') - 1
-	s = 0
+	i0 = np.zeros(nw,dtype='int64') - 1
+	i1 = np.zeros(nw,dtype='int64') - 1
+	# s = 0
+	# for i in range(0,nw):
+		# t0 = tmid[i] - wind/2.0
+		# t1 = tmid[i] + wind/2.0
+		# for j in range(s,t.size):
+			# if (t[j] >= t0) and (t[j] < t1):
+				# s = j
+				# i0[i] = j
+				# break
+			# if (t[j] >= t1):
+				# break
+	# e = t.size
+	# for i in range(0,nw):
+		# t0 = tmid[i] - wind/2.0
+		# t1 = tmid[i] + wind/2.0
+		# for j in range(e-1,-1,-1):
+			# if (t[j] >= t0) and (t[j] < t1):
+				# e = j+1
+				# i1[i] = j+1
+				# break
+			# if (t[j] < t0):
+				# break
+	# good = np.where((i0 > -1) & (i1 > -1))[0]
+	# i0 = i0[good]
+	# i1 = i1[good]
+	# tmid = tmid[good]
+	# nw = good.size
+	
+	#need a faster way of doing this
 	for i in range(0,nw):
 		t0 = tmid[i] - wind/2.0
 		t1 = tmid[i] + wind/2.0
-		for j in range(s,t.size):
-			if (t[j] >= t0) and (t[j] < t1):
-				s = j
-				i0[i] = j
-				break
-			if (t[j] >= t1):
-				break
-	e = t.size
-	for i in range(0,nw):
-		t0 = tmid[i] - wind/2.0
-		t1 = tmid[i] + wind/2.0
-		for j in range(e-1,-1,-1):
-			if (t[j] >= t0) and (t[j] < t1):
-				e = j+1
-				i1[i] = j+1
-				break
-			if (t[j] < t0):
-				break
+		use = np.where((t >= t0) & (t < t1))[0]
+		if use.size > 2:
+			i0[i] = use[0]
+			i1[i] = use[-1]+1
 	good = np.where((i0 > -1) & (i1 > -1))[0]
 	i0 = i0[good]
 	i1 = i1[good]
 	tmid = tmid[good]
+	nw = good.size		
 		
 	return nw,i0,i1,tmid
