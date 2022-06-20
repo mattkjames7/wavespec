@@ -3,7 +3,7 @@ from .LombScargle import LombScargle
 from ..Tools.DetectGaps import DetectGaps
 from ..Tools.PolyDetrend import PolyDetrend
 from ..Tools.RemoveStep import RemoveStep
-from ..Tools.GetWindows import GetLSWindows
+from ._GetLSWindows import _GetLSWindows
 
 def Spectrogram(t,v,wind,slip,**kwargs):
 	'''
@@ -79,11 +79,9 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	FreqLim = kwargs.get('FreqLim',None)
 	Freq = kwargs.get('Freq',None)
 	Detrend = kwargs.get('Detrend',True)
-	FindGaps = kwargs.get('FindGaps',True)
 	GoodData = kwargs.get('GoodData',None)
 	Quiet = kwargs.get('Quiet',True)
 	Threshold = kwargs.get('Threshold',0.0)
-	WindowUnits = kwargs.get('WindowUnits','s')
 	OneSided = kwargs.get('OneSided',True)
 	Steps = kwargs.get('Steps',None)
 
@@ -101,34 +99,16 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		Res = np.nanmean(t[1:]-t[:-1])
 
 
-	#detect and gaps in the input data
-	if FindGaps:
-		ngd,Ti0,Ti1 = DetectGaps(v,GoodData)
+	#detect good/bad data
+	if GoodData is None:
+		good = np.where(np.isfinite(v))[0]
 	else:
-		ngd = 1
-		Ti0 = np.array([0])
-		Ti1 = np.array([Tlen-1])
-	
-	if ngd == 0:
-		ngd = 1
-		Ti0 = np.array([0])
-		Ti1 = np.array([Tlen-1])
-		
-	
+		good = np.where(GoodData)[0]
+			
+	#get the windows and their indices etc.
+	Nw,i0,i1,Tmid = _GetLSWindows(t,wind,slip,Tax=Tax)	
 
-	#check if we have a predefined time axis
-	if not Tax is None:
-		Nw = Tax.size
-		ngd = 1
-		Nwind = np.array([Nw])
-		Ti0 = np.array([0])
-		Ti1 = np.array([Tlen-1])
-		
-		
-		
-	#find the number of windows
-	NwTot,Nw,Wi0,Wi1,Tax = GetLSWindows(t,wind,slip,ngd,Ti0,Ti1,Tax)
-	
+
 	#find the number of frequencies
 	if Freq is None:
 		LenW = np.int32(np.round(wind/Res))
@@ -143,91 +123,70 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 		find = np.arange(Nf).astype('int32')
 	else:
 		find = np.where((Freq >= FreqLim[0]) & (Freq <= FreqLim[1]))[0]
+		if find[-1] == Freq.size-1:
+			find = find[:-1]
+		Freq = np.append(Freq[find],Freq[find[-1]+1])
 		Nf = find.size
 
 
 	#create the output arrays
 	dtype = [	('Tspec','float64'),		#mid point in time of the current window
-				('Pow','float32',(Nf,)),	#Power spectra
-				('Pha','float32',(Nf,)),	#phase spectra
-				('Amp','float32',(Nf,)),	#Amplitude
-				('Comp','complex64',(Nf,)),	#Real and Imaginary components of spectra
-				('Size','int32'),			#Number of valid (finite) values used to create spectrum
-				('Good','float32'),			#Fraction of good data
-				('Var','float32'),]			#Variance
+				('Pow','float64',(Nf,)),	#Power spectra
+				('Pha','float64',(Nf,)),	#phase spectra
+				('Amp','float64',(Nf,)),	#Amplitude
+				('Comp','complex128',(Nf,)),	#Real and Imaginary components of spectra
+				('Size','int64'),			#Number of valid (finite) values used to create spectrum
+				('Good','float64'),			#Fraction of good data
+				('Var','float64'),]			#Variance
 	out = np.recarray(Nw,dtype=dtype)
 	out.fill(np.nan)
 	out.nV = 0.0
 	out.Tspec = Tax
 	
-	#loop through each good secion of the time series and FFT/L-S
-	nd=0
-	pos=0
-	for i in range(0,ngd):
-		if nd > 0:
-			#this bit adds a load of NaNs in a gap in the middle of two good sections
-			pos+=1
+
+	
+	#loop through each window and FFT
+	ind0 = np.arange(LenW).astype('int32')
+	for i in range(0,Nw):
+		#get the data for this window
+		ind = np.arange(i0[i],i1[i])
+		tw = t[ind]
+		vw = v[ind]
+		gd = good[ind]
+			
+		use = np.where(gd)[0]
+		ngd = use.size
+		bad = ngd <= 1
+				
+		#assuming everything is good, go ahead with the FFT
+		if not bad:
+			tw = tw[use]
+			vw = vw[use]
+			
+			#detrend if necessary
+	
+			if Detrend:
+				vw = PolyDetrend(tw,vw,np.int(Detrend))
+
+			power,amp,phase,fr,fi = LombScargle(tw,vw,Freq,'C++',
+				WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
+			out.Var[i] = np.var(vw)
 		
-		if Nw[i] > 0:
-			#loop through each window
-			for j in range(0,Nw[i]):
-				#get the data for this window
-				ind = np.arange(Wi0[i][j],Wi1[i][j]+1)
-				tw = t[ind]
-				vw = v[ind]
-				
-				badvals = (np.isfinite(vw) == False)
-				goodvals = badvals == False
-				gd = np.sum(goodvals)
-				
-				
-				#select only good values - unless doing FFT where all
-				#values should be good already
-				use = np.where(goodvals)[0]
-
-				
-				#this shouldn't really happen, but if the length of the array
-				#doesn't match the indices, or there are dodgy values
-				bad = False
-				if use.size == 0:
-					bad = True
-				elif np.max(use) >= vw.size:
-					bad = True
-				else:
-					bad = badvals.all()
-					bad = (np.isfinite(vw[use]) == False).any()
-
-				tw = tw[use]
-				vw = vw[use]
-									
-				#assuming everything is good, go ahead with the FFT
-				if not bad:
-					#remove steps and					
-					#detrend if necessary
-					if not Steps is None:
-						vw = RemoveStep(tw,vw,Steps[ind],2,5)						
-					if Detrend:
-						vw = PolyDetrend(tw,vw,np.int(Detrend))
-
-					power,amp,phase,fr,fi = LombScargle(tw,vw,Freq,'C++',WindowFunction,Param,Threshold=Threshold,Fudge=Fudge)
-					out.Var[j+pos] = np.var(vw)
-				
-					out.Pow[j+pos] = power[find]
-					out.Pha[j+pos] = phase[find]
-					out.Amp[j+pos] = amp[find]
-					out.Comp[j+pos] = fr[find] + 1j*fi[find]
-					out.Size[j+pos] = use.size
-					out.Good[j+pos] = gd.size/ind.size
-				else:
-					out[j+pos].Size = 0
-				if not Quiet:
-					print('\r{:6.2f}%'.format(100.0*np.float32(pos+j+1)/NwTot),end='')
+			out.Pow[i] = power[find]
+			out.Pha[i] = phase[find]
+			out.Amp[i] = amp[find]
+			out.Comp[i] = fr[find] + 1j*fi[find]
+			out.Size[i] = ind.size
+			out.Good[i] = ngd/ind.size
+		else:
+			out[i].Var = np.nanvar(vw)
+			out[i].Size = ind.size
+			out[i].Good = ngd/ind.size
+		if not Quiet:
+			print('\r{:6.2f}%'.format(100.0*np.float32(i+1)/Nw),end='')
 	
-			pos += Nw[i]
-			nd += 1
+
 	if not Quiet:
-		print('')			
+		print('')
 			
-			
-	return NwTot,Freq[find],out
-	
+	return Nw,Freq,out
