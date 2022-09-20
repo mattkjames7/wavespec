@@ -181,8 +181,7 @@ def CPWavesFFT(t,Bheq,Bhpol,Window=2400,Slip=300,Highpass=0.00125,**kwargs):
 	res = t[1] - t[0]
 	Bhpolf = Filter.Filter(Bhpol,res,high=1/Highpass)
 	Bheqf = Filter.Filter(Bheq,res,high=1/Highpass)
-	
-	print(Bhpolf.size,Bheqf.size)
+
 
 	#replace this with CrossSpec
 	Nw,F,s_pol = Fourier.Spectrogram(t,Bhpolf,Window,Slip,**kwargs)
@@ -241,4 +240,85 @@ def CPWavesFFT(t,Bheq,Bhpol,Window=2400,Slip=300,Highpass=0.00125,**kwargs):
 
 	return out
 
+def CPWavesFFTSpec(Tspec,F,efft,pfft,N0,**kwargs):
+	'''
+	This function uses a method based on that used by Wharton et al 2018
+	to detect ULF waves using the cross spectra of two magnetometer 
+	stations.
 	
+	
+	Inputs
+	======
+	t : float
+		Time axis in seconds
+	Bheq : float
+		H-component of the magnetic field (nT) measured by the 
+		equatorward station
+	Bhpol : float
+		H-component of the magnetic field (in nT) measured by the 
+		poleward station
+	Window : float|int
+		Window length in seconds
+	Slip : float|int
+		Gap in seconds between consecutive windows
+	Highpass: float
+		High-pass filter cutoff (Hz)
+		
+	Returns
+	=======
+	
+	'''
+	
+
+	
+	df = F[1:] - F[:-1]
+	
+	#cross spectrum
+	#N0 = Window//res
+	C = (pfft* efft.conj())
+	tax = Tspec
+	Slip = tax[1] - tax[0]
+	tax = np.append(tax,(Tspec[-1] + Slip))
+
+	Cpow = np.abs(C) #fudged to be like Sam's
+	Cpha = np.angle(C,deg=True)
+	
+	PR = ((np.abs(efft*N0))**2/(np.abs(pfft*N0))**2)
+
+	#get the smoothed spectra
+	Cpha_smooth,Cpha_std,Cpow_smooth = _BerubeSmooth(Cpha,Cpow,tax,F)
+	
+	#largest phase
+	Cpha_largest = _SignificantPhase(Cpha_smooth)
+	
+	#t-test
+	ttest,Cpha_surv = _tTest(Cpha_largest,Cpha_std)
+	
+	#uncertainty
+	uncert = _Uncertainties(Cpha_surv,F*1000,PR)
+	
+	ts,fs,us = _GetErrBars(tax,F,Cpha_surv,uncert)
+	#print(ts)
+	#print(fs)
+	#print(us)
+	
+	#fill an output dict
+	out = {	'Tspec'			:	Tspec,
+			'Tax'			:	tax,
+			'F'				: 	F,
+			'C'				:	C,
+			'Cpow'			:	Cpow,
+			'Cpow_smooth'	:	Cpow_smooth,
+			'Cpha'			:	Cpha,
+			'Cpha_smooth'	: 	Cpha_smooth,
+			'Cpha_largest'	:	Cpha_largest,
+			'Cpha_surv'		:	Cpha_surv,
+			'Uncert'		:	uncert,
+			't'				:	ts,
+			'f'				:	fs,
+			'u'				:	us/1000.0,
+			'ttest'			:	ttest,
+			'PR'			:	PR,}
+
+	return out
+
