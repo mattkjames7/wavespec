@@ -200,6 +200,7 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 				tw = tw[use]
 				vw = vw[use]
 									
+								
 				#assuming everything is good, go ahead with the FFT
 				if not bad:
 					#remove steps and					
