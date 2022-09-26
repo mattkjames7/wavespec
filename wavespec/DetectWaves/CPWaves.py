@@ -146,7 +146,7 @@ def _GetErrBars(t,F,Cpha,unc):
 	ts = t[gt]
 	us = unc[gt,gf]
 	
-	return ts,fs,us
+	return ts,fs,us,gt,gf
 
 def CPWavesFFT(t,Bheq,Bhpol,Window=2400,Slip=300,Highpass=0.00125,**kwargs):
 	'''
@@ -212,7 +212,7 @@ def CPWavesFFT(t,Bheq,Bhpol,Window=2400,Slip=300,Highpass=0.00125,**kwargs):
 	#uncertainty
 	uncert = _Uncertainties(Cpha_surv,F*1000,PR)
 	
-	ts,fs,us = _GetErrBars(tax,F,Cpha_surv,uncert)
+	ts,fs,us,ti,tf = _GetErrBars(tax,F,Cpha_surv,uncert)
 	#print(ts)
 	#print(fs)
 	#print(us)
@@ -231,6 +231,8 @@ def CPWavesFFT(t,Bheq,Bhpol,Window=2400,Slip=300,Highpass=0.00125,**kwargs):
 			'Uncert'		:	uncert,
 			't'				:	ts,
 			'f'				:	fs,
+			'ti'			:	ti,
+			'fi'			:	fi,
 			'u'				:	us/1000.0,
 			'ttest'			:	ttest,
 			'PR'			:	PR,
@@ -297,7 +299,7 @@ def CPWavesFFTSpec(Tspec,F,efft,pfft,N0,**kwargs):
 	#uncertainty
 	uncert = _Uncertainties(Cpha_surv,F*1000,PR)
 	
-	ts,fs,us = _GetErrBars(tax,F,Cpha_surv,uncert)
+	ts,fs,us,ti,fi = _GetErrBars(tax,F,Cpha_surv,uncert)
 	#print(ts)
 	#print(fs)
 	#print(us)
@@ -316,6 +318,8 @@ def CPWavesFFTSpec(Tspec,F,efft,pfft,N0,**kwargs):
 			'Uncert'		:	uncert,
 			't'				:	ts,
 			'f'				:	fs,
+			'ti'			:	ti,
+			'fi'			:	fi,
 			'u'				:	us/1000.0,
 			'ttest'			:	ttest,
 			'PR'			:	PR,}
