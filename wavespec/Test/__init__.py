@@ -1,4 +1,4 @@
-from .TestPolarization import TestPolarization
+from .TestPolarization import TestPolarization,PlotPolEllipse,TestMultiPolarization
 from .TestLS import TestLS,TestLS2
 from .TestSpectrogram import TestSpectrogram
 from .TestCPSpectrogram import TestCPSpectrogram

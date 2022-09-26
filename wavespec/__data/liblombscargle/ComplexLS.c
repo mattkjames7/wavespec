@@ -3,19 +3,45 @@ complex Lomb-Scargle */
 #include "ComplexLS.h"
 /* Samuel Wharton's code!!!*/
 
-void ComplexLS(int lent, int lenw, float *time, float *data, float *omega, float *amplitude, float *phase, float *a, float *b)
-{
+/***********************************************************************
+ * NAME : ComplexLS(lent,lenw,time,data,omega,amplitude,phase,a,b)
+ * 
+ * DESCRIPTION : 	This function calculates the complex Lomb-Scargle
+ * 		periodogram - essentially a DFT for irregularly spaced data.
+ * 		This specific function was originally written by Samuel Wharton
+ * 		then adapted by me...
+ * 
+ * INPUTS : 
+ * 		int lent			Length of the time array.
+ * 		int lenw			Length of the omega array.
+ * 		double *time			Time array.
+ * 		double *data			Data to be transformed.
+ * 		double *omega		Desired angular frequencies.
+ * 
+ * OUTPUTS : 
+ * 		double *amplitude	Output amplitudes.
+ * 		double *phase		Output phase.
+ * 		double *a 			Parameter a
+ * 		double *b			Parameter b
+ * 
+ * Parameters a and b are related to the real and imaginary components
+ * of the FFT.
+ * 
+ * ********************************************************************/
+void ComplexLS(	int lent, int lenw, double *time, double *data, 
+				double *omega, double *amplitude, double *phase, 
+				double *a, double *b) {
 	/*This will calculate the amplitude and phase of the Lomb-Scargle Periodogram
 	
 	Parameters
 	----------
 	int lent - length of the time array. 
 	int lenw - length of the omega array. 
-	float *time - the time array. 
-	float *data - the data/amplitude array. 
-	float *omega - the angular frequency array. 
-	float *amplitude - the LS amplitude array to be filled. 
-	float *phase - the LS phase array to be filled. 
+	double *time - the time array. 
+	double *data - the data/amplitude array. 
+	double *omega - the angular frequency array. 
+	double *amplitude - the LS amplitude array to be filled. 
+	double *phase - the LS phase array to be filled. 
 	
 	*/
 	

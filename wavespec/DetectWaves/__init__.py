@@ -1,2 +1,2 @@
 from .DetectWavePeaks import DetectWavePeaks
-from .CPWaves import CPWavesFFT
+from .CPWaves import CPWavesFFT,CPWavesFFTSpec

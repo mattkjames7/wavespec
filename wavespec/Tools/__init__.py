@@ -7,3 +7,4 @@ from .RemoveStep import RemoveStep
 from .DetectGaps import DetectGaps 
 from .GetWindows import GetFFTWindows,GetLSWindows
 from .mode import mode
+from .kVector import kVector

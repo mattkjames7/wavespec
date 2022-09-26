@@ -92,7 +92,7 @@ def Spectrogram():
 	ax0.set_xlabel('Time (s)')
 		
 	#spectrogram
-	ax1,Nw,Freq,Spec = Fourier.PlotSpectrogram(t,v,wind,slip,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	ax1,Freq,Spec = Fourier.PlotSpectrogram(t,v,wind,slip,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1],TimeAxisUnits='s')
 	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
 	ax1.set_ylim(0,fmx*1000)
 	
@@ -134,7 +134,7 @@ def Spectrogram2():
 	Nw,Freq,Spec = Fourier.Spectrogram(t,v,wind,slip)
 		
 	#spectrogram
-	ax1,Nw,Freq,Spec = Fourier.PlotSpectrogram(Freq,Spec,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
+	ax1,Freq,Spec = Fourier.PlotSpectrogram(Freq,Spec,FreqAxisUnits='mHz',fig=fig,maps=[1,2,0,1])
 	fmx = np.min([Freq.max(),1.5*np.max([f0,f1])])
 	ax1.set_ylim(0,fmx*1000)
 	
@@ -211,7 +211,7 @@ def Spectrogram3D():
 	#spectrogram
 	wind = 1800
 	slip = 200
-	Nw,LenW,Freq,Spec = Fourier.Spectrogram3D(t,x,y,z,wind,slip,CombineComps=True)
+	Nw,Freq,Spec = Fourier.Spectrogram3D(t,x,y,z,wind,slip,CombineComps=True)
 	Nf = Freq.size - 1
 	S = Spec.xyPow
 	f = Freq[:Nf+1]*1000.0

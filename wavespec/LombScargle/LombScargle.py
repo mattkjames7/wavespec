@@ -3,7 +3,45 @@ from ._CFunctions import _CLombScargle,_CLombScargleSam
 from ..Tools.WindowFunctions import ApplyWindowFunction
 
 def _PyLombScargle(t,x,f,Threshold=0.0,Fudge=True):
+	'''
+	Python code to calculate the L-S periodogram if for whatever
+	reason the C version isn't working.
 	
+	Inputs
+	======
+	t : float
+		time array in seconds, length n
+	x : float
+		data array, length n
+	f : float 
+		array of frequencies to determine periodogram at, length nf
+	Threshold : float
+		If set to a value above 0, then all values which 
+		correspond to frequencies where the amplitude is less than
+		Threshold are set to 0, effectively removing noise from the
+		spectra.
+	Fudge : bool
+		This applies a fudge for when f == Nyquist frequency, because
+		small floating point numbers have relatively large errors.
+		This should only be needed if intending to reproduce a
+		two-sided FFT (also, if doing this then divide A by 2 and P 
+		by 4).
+	
+	Returns
+	=======
+	P : float
+		Periodogram power
+	A : float
+		Amplitude
+	phi : float
+		Phase in radians
+	a : float
+		Parameter a, see Hocke 1998.
+	b : float
+		Parameter b, see Hocke 1998.
+	
+	
+	'''
 	#get array sizes
 	nf = np.size(f)
 	n = np.size(t)
@@ -89,33 +127,46 @@ def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None,Threshold=0.
 	
 	Inputs
 	======
-	t: 		time array in seconds, length n
-	x: 		data array, length n
-	f: 		array of frequencies to determine periodogram at, length nf
-	Backend: 'C++' or 'Python' or 'Sam'
-	WindowFunction : Select a window function to apply to the data before 
-			the transform, the options are: 'none','cosine-bell','hamming',
-			'triangle','welch','blackman','nuttall','blackman-nuttall',
-			'flat-top','cosine','gaussian'
-	Param: This parameter is used to alter some of the window functions
-			(see WindowFunctions.py).
-	Threshold:	If set to a value above 0, then all values which 
-			correspond to frequencies where the amplitude is less than
-			Threshold are set to 0, effectively removing noise from the
-			spectra.
-	Fudge:	This applies a fudge for when f == Nyquist frequency, because
-			small floating point numbers have relatively large errors.
-			This should only be needed if intending to reproduce a
-			two-sided FFT (also, if doing this then divide A by 2 and P 
-			by 4).
+	t : float
+		time array in seconds, length n
+	x : float
+		data array, length n
+	f : float 
+		array of frequencies to determine periodogram at, length nf
+	Backend : str
+		'C++' or 'Python' or 'Sam'
+	WindowFunction : str
+		Select a window function to apply to the data before 
+		the transform, the options are: 'none','cosine-bell','hamming',
+		'triangle','welch','blackman','nuttall','blackman-nuttall',
+		'flat-top','cosine','gaussian'
+	Param : float
+		This parameter is used to alter some of the window functions
+		(see WindowFunctions.py).
+	Threshold : float
+		If set to a value above 0, then all values which 
+		correspond to frequencies where the amplitude is less than
+		Threshold are set to 0, effectively removing noise from the
+		spectra.
+	Fudge : bool
+		This applies a fudge for when f == Nyquist frequency, because
+		small floating point numbers have relatively large errors.
+		This should only be needed if intending to reproduce a
+		two-sided FFT (also, if doing this then divide A by 2 and P 
+		by 4).
 	
 	Returns
 	=======
-	P:		Periodogram power
-	A: 		Amplitude
-	phi:	Phase in radians
-	a:		Parameter a, see Hocke 1998.
-	b:		Parameter b, see Hocke 1998.
+	P : float
+		Periodogram power
+	A : float
+		Amplitude
+	phi : float
+		Phase in radians
+	a : float
+		Parameter a, see Hocke 1998.
+	b : float
+		Parameter b, see Hocke 1998.
 	
 	'''
 	
@@ -150,14 +201,14 @@ def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None,Threshold=0.
 		n = np.int32(np.size(t))
 		
 		#create output arrays (Power, amplitude, phase, a, b)
-		P = np.zeros((nf,),dtype='float32')
-		A = np.zeros((nf,),dtype='float32')
-		phi = np.zeros((nf,),dtype='float32')
-		a = np.zeros((nf,),dtype='float32')
-		b = np.zeros((nf,),dtype='float32')
+		P = np.zeros((nf,),dtype='float64')
+		A = np.zeros((nf,),dtype='float64')
+		phi = np.zeros((nf,),dtype='float64')
+		a = np.zeros((nf,),dtype='float64')
+		b = np.zeros((nf,),dtype='float64')
 		
 		#Call the C++ function
-		_CLombScargleSam(t.astype('float32'),x.astype('float32'),n,f.astype('float32'),nf,P,A,phi,a,b)
+		_CLombScargleSam(t.astype('float64'),x.astype('float64'),n,f.astype('float64'),nf,P,A,phi,a,b)
 
 		#return result
 		return P,A,phi,a,b

@@ -19,9 +19,29 @@ libLS = Globals.libLS
 
 #define functions used from the library
 _CLombScargle = libLS.LombScargle
-_CLombScargle.argtypes = [c_double_ptr, c_double_ptr, c_int, c_double_ptr, c_int, c_double_ptr, c_double_ptr, c_double_ptr, c_double_ptr, c_double_ptr, c_double, c_bool]
+_CLombScargle.argtypes = [	c_double_ptr, 
+							c_double_ptr, 
+							c_int, 
+							c_double_ptr, 
+							c_int, 
+							c_double_ptr, 
+							c_double_ptr, 
+							c_double_ptr, 
+							c_double_ptr, 
+							c_double_ptr, 
+							c_double, 
+							c_bool]
 _CLombScargle.restype = None
 
 _CLombScargleSam = libLS.LombScargleSam
-_CLombScargleSam.argtypes = [c_float_ptr, c_float_ptr, c_int, c_float_ptr, c_int, c_float_ptr, c_float_ptr, c_float_ptr, c_float_ptr, c_float_ptr]
+_CLombScargleSam.argtypes = [	c_double_ptr, 
+								c_double_ptr,
+								c_int, 
+								c_double_ptr, 
+								c_int, 
+								c_double_ptr, 
+								c_double_ptr, 
+								c_double_ptr, 
+								c_double_ptr, 
+								c_double_ptr]
 _CLombScargleSam.restype = None
