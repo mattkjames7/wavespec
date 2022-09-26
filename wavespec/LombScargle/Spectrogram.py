@@ -172,7 +172,6 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 	out.Tspec = Tmid
 	
 
-	
 	#loop through each window and FFT
 	for i in range(0,Nw):
 		#get the data for this window
