@@ -1,1 +1,3 @@
 recursive-include wavespec/__data/liblombscargle *
+recursive-include wavespec/__data/ *
+recursive-include wavespec/__data/libfilter *
