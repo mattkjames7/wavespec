@@ -1,5 +1,7 @@
 import os
 
+ModulePath = os.path.dirname(__file__) + "/__data/"
+
 #this is where we will store the Lomb-Scargle stuff
 libLSpath = os.path.dirname(__file__)+"/__data/liblombscargle/"
 libLSfile = libLSpath + "liblombscargle.so"
