@@ -4,7 +4,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
 #endif
+
 /***********************************************************************
  * NAME : ComplexLS(lent,lenw,time,data,omega,amplitude,phase,a,b)
  * 
@@ -33,3 +36,9 @@
 void ComplexLS(	int lent, int lenw, double *time, double *data, 
 				double *omega, double *amplitude, double *phase, 
 				double *a, double *b);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

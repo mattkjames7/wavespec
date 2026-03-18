@@ -11,6 +11,11 @@ add_library(lombscargle SHARED
 target_include_directories(lombscargle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(lombscargle PRIVATE m)
 
+if(UNIX AND NOT APPLE)
+    # Catch unresolved symbols during build rather than at import-time dlopen.
+    target_link_options(lombscargle PRIVATE "-Wl,--no-undefined")
+endif()
+
 set_target_properties(lombscargle PROPERTIES
     OUTPUT_NAME "lombscargle"
 )
