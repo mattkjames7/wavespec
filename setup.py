@@ -1,12 +1,17 @@
 import setuptools
 from setuptools.command.build_py import build_py as _build_py
-from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.dist import Distribution
 import os
 import subprocess
 import shutil
 import platform
 import glob
+import re
+
+try:
+    from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+except Exception:  # pragma: no cover - fallback for older setuptools
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -32,6 +37,31 @@ def getversion():
 version = getversion()
 
 
+def _get_macos_arch():
+    """Return a single target macOS arch when one is clearly specified."""
+    # Explicit project override takes precedence.
+    arch = os.environ.get('WAVESPEC_MACOS_ARCH', '').strip()
+    if arch:
+        return arch
+
+    # Respect explicit CMake architecture if provided by caller/CI.
+    cmake_arch = os.environ.get('CMAKE_OSX_ARCHITECTURES', '').strip()
+    if cmake_arch:
+        # CMake accepts semicolon-separated arch values.
+        parts = [p.strip() for p in cmake_arch.split(';') if p.strip()]
+        if len(parts) == 1:
+            return parts[0]
+
+    # Parse ARCHFLAGS like: "-arch arm64".
+    archflags = os.environ.get('ARCHFLAGS', '')
+    matches = re.findall(r'-arch\s+([A-Za-z0-9_]+)', archflags)
+    unique = sorted(set(matches))
+    if len(unique) == 1:
+        return unique[0]
+
+    return None
+
+
 class build_py(_build_py):
     """Custom build_py that runs CMake to build bundled shared libs
 
@@ -48,7 +78,12 @@ class build_py(_build_py):
             build_dir = os.path.join(data_dir, 'build')
             try:
                 # Configure and build with CMake if available
-                subprocess.check_call(['cmake', '-S', data_dir, '-B', build_dir])
+                cmake_cmd = ['cmake', '-S', data_dir, '-B', build_dir]
+                if platform.system() == 'Darwin':
+                    arch = _get_macos_arch()
+                    if arch:
+                        cmake_cmd.append(f'-DCMAKE_OSX_ARCHITECTURES={arch}')
+                subprocess.check_call(cmake_cmd)
                 subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release'])
             except Exception as e:
                 raise RuntimeError(f'CMake build for bundled libraries failed: {e}')
@@ -152,6 +187,22 @@ class bdist_wheel(_bdist_wheel):
         super().finalize_options()
         # This package includes platform-specific native libraries.
         self.root_is_pure = False
+
+        if platform.system() == 'Darwin':
+            arch = _get_macos_arch()
+            if arch in ('arm64', 'x86_64'):
+                # bdist_wheel may pre-populate plat_name (often universal2).
+                # If a single arch is explicitly requested, force that wheel tag.
+                deployment = os.environ.get('MACOSX_DEPLOYMENT_TARGET', '').strip()
+                if deployment and '.' in deployment:
+                    major, minor = deployment.split('.', 1)
+                else:
+                    major = platform.mac_ver()[0].split('.')[0] or '14'
+                    minor = '0'
+                self.plat_name = f'macosx-{major}.{minor}-{arch}'
+                # wheel/setuptools only uses plat_name for tag computation when
+                # this flag is truthy (normally set by --plat-name CLI arg).
+                self.plat_name_supplied = True
 
 
 class BinaryDistribution(Distribution):
