@@ -96,7 +96,9 @@ jobs:
 
       - name: Install wheel
         run: |
-          python -m pip install --upgrade dist/*.whl
+          $wheel = Get-ChildItem -Path dist -Filter *.whl | Select-Object -First 1
+          if (-not $wheel) { throw "No wheel found in dist/" }
+          python -m pip install --upgrade $wheel.FullName
 
       - name: Import test
         run: |
