@@ -184,11 +184,18 @@ class bdist_wheel(_bdist_wheel):
         # This package includes platform-specific native libraries.
         self.root_is_pure = False
 
-        if platform.system() == 'Darwin' and not self.plat_name:
+        if platform.system() == 'Darwin':
             arch = _get_macos_arch()
             if arch in ('arm64', 'x86_64'):
-                major = platform.mac_ver()[0].split('.')[0] or '14'
-                self.plat_name = f'macosx_{major}_0_{arch}'
+                # bdist_wheel may pre-populate plat_name (often universal2).
+                # If a single arch is explicitly requested, force that wheel tag.
+                deployment = os.environ.get('MACOSX_DEPLOYMENT_TARGET', '').strip()
+                if deployment and '.' in deployment:
+                    major, minor = deployment.split('.', 1)
+                else:
+                    major = platform.mac_ver()[0].split('.')[0] or '14'
+                    minor = '0'
+                self.plat_name = f'macosx-{major}.{minor}-{arch}'
 
 
 class BinaryDistribution(Distribution):
