@@ -1,0 +1,15 @@
+# Generated build output
+build/
+
+# Local virtual environments accidentally created in this directory
+.venv/
+.venv-*/
+.venv-ci/
+
+# Generated shared libraries (built during packaging)
+liblombscargle.so
+libfilter.so
+liblombscargle.dylib
+libfilter.dylib
+liblombscargle.dll
+libfilter.dll
