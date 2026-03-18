@@ -146,7 +146,11 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 				('Good','float64'),			#Fraction of good data
 				('Var','float64'),]			#Variance
 	out = np.recarray(Nw,dtype=dtype)
-	out.fill(np.nan)
+	for nm in out.dtype.names:
+		try:
+			out[nm].fill(np.nan)
+		except:
+			out[nm].fill(0)
 	out.nV = 0.0
 	out.Tspec = Tmid
 
@@ -166,7 +170,8 @@ def Spectrogram(t,v,wind,slip,**kwargs):
 			#detrend if necessary
 	
 			if Detrend:
-				vw = PolyDetrend(tw,vw,np.int(Detrend))
+				if np.isfinite(vw).sum() > 2:
+					vw = PolyDetrend(tw,vw,np.int32(Detrend))
 
 					
 			power,amp,phase,fr,fi,freq = FFT(tw,vw,WindowFunction,Param,
