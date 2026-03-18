@@ -9,7 +9,10 @@ add_library(lombscargle SHARED
 )
 
 target_include_directories(lombscargle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lombscargle PRIVATE m)
+
+if(NOT WIN32)
+    target_link_libraries(lombscargle PRIVATE m)
+endif()
 
 if(UNIX AND NOT APPLE)
     # Catch unresolved symbols during build rather than at import-time dlopen.
