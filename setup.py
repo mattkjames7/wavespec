@@ -1,6 +1,5 @@
 import setuptools
 from setuptools.command.build_py import build_py as _build_py
-from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.dist import Distribution
 import os
 import subprocess
@@ -8,6 +7,11 @@ import shutil
 import platform
 import glob
 import re
+
+try:
+    from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+except Exception:  # pragma: no cover - fallback for older setuptools
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -196,6 +200,9 @@ class bdist_wheel(_bdist_wheel):
                     major = platform.mac_ver()[0].split('.')[0] or '14'
                     minor = '0'
                 self.plat_name = f'macosx-{major}.{minor}-{arch}'
+                # wheel/setuptools only uses plat_name for tag computation when
+                # this flag is truthy (normally set by --plat-name CLI arg).
+                self.plat_name_supplied = True
 
 
 class BinaryDistribution(Distribution):
