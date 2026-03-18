@@ -104,7 +104,7 @@ class build_py(_build_py):
 
 setuptools.setup(
     name="wavespec",
-    version="0.0.5",
+    version="0.0.6",
     author="Matthew Knight James",
     author_email="mattkjames7@gmail.com",
     description="Some spectral analysis tools for analyzing waves in data.",
