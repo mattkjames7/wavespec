@@ -26,19 +26,40 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential
-          python -m pip install --upgrade pip setuptools wheel build
+          python -m pip install --upgrade pip
 
-      - name: Build wheel
+      - name: Select manylinux Python tag
         run: |
-          python -m build --wheel -o dist || python setup.py bdist_wheel
+          case "${{ matrix.python-version }}" in
+            "3.10") echo "MANYLINUX_PYTAG=cp310-cp310" >> "$GITHUB_ENV" ;;
+            "3.11") echo "MANYLINUX_PYTAG=cp311-cp311" >> "$GITHUB_ENV" ;;
+            "3.12") echo "MANYLINUX_PYTAG=cp312-cp312" >> "$GITHUB_ENV" ;;
+            "3.13") echo "MANYLINUX_PYTAG=cp313-cp313" >> "$GITHUB_ENV" ;;
+            "3.14") echo "MANYLINUX_PYTAG=cp314-cp314" >> "$GITHUB_ENV" ;;
+            *)
+              echo "Unsupported python-version: ${{ matrix.python-version }}"
+              exit 1
+              ;;
+          esac
 
-      - name: Repair wheel with auditwheel
+      - name: Build and repair wheel in manylinux container
         run: |
-          python -m pip install --upgrade auditwheel
-          mkdir -p wheelhouse
-          auditwheel repair dist/*.whl -w wheelhouse
+          rm -rf dist wheelhouse
+          mkdir -p dist wheelhouse
+          docker run --rm \
+            -e PYTAG="${MANYLINUX_PYTAG}" \
+            -v "${{ github.workspace }}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux_2_34:latest \
+            /bin/bash -lc '
+              set -euo pipefail
+              if ! command -v cmake >/dev/null 2>&1; then
+                dnf install -y cmake gcc gcc-c++ make
+              fi
+              "/opt/python/${PYTAG}/bin/python" -m pip install --upgrade pip setuptools wheel build auditwheel
+              "/opt/python/${PYTAG}/bin/python" -m build --wheel -o dist
+              auditwheel repair dist/*.whl -w wheelhouse
+            '
 
       - name: Install wheel
         run: |
