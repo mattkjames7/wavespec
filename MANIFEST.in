@@ -1,3 +1,31 @@
-recursive-include wavespec/__data/liblombscargle *
-recursive-include wavespec/__data/ *
-recursive-include wavespec/__data/libfilter *
+include wavespec/__data/CMakeLists.txt
+include wavespec/__data/cpdata.bin
+
+# liblombscargle sources/build metadata (top-level files only)
+include wavespec/__data/liblombscargle/ComplexLS.c
+include wavespec/__data/liblombscargle/ComplexLS.h
+include wavespec/__data/liblombscargle/liblombscargle.cc
+include wavespec/__data/liblombscargle/liblombscargle.h
+include wavespec/__data/liblombscargle/makefile
+include wavespec/__data/liblombscargle/CMakeLists.txt
+
+# libfilter sources/build metadata (top-level files only)
+include wavespec/__data/libfilter/libfilter.cc
+include wavespec/__data/libfilter/libfilter.h
+include wavespec/__data/libfilter/makefile
+include wavespec/__data/libfilter/CMakeLists.txt
+
+# include built runtime libraries if present at packaging time
+include wavespec/__data/liblombscargle/liblombscargle.so
+include wavespec/__data/libfilter/libfilter.so
+include wavespec/__data/liblombscargle/liblombscargle.dylib
+include wavespec/__data/libfilter/libfilter.dylib
+include wavespec/__data/liblombscargle/liblombscargle.dll
+include wavespec/__data/libfilter/libfilter.dll
+
+prune wavespec/__data/build
+prune wavespec/__data/.venv-ci
+prune wavespec/__data/.venv
+prune wavespec/__data/.venv-*
+
+global-exclude *.pyc

@@ -1,20 +1,24 @@
 import os
-import numpy as np
 from . import Globals
 
-def _CheckFirstImport():
-	#check if we need root or not!
-	path = os.path.dirname(__file__)
-	if '/usr/local/' in path:
-		sudo = 'sudo '
-	else:
-		sudo = ''
-	
 
-	#first of all - check if the shared object exists
+def _CheckFirstImport():
+	"""Do not build on import. Only check presence of bundled shared libs.
+
+	This function used to attempt to compile bundled C libraries on first
+	import. Building is now performed during packaging via `setup.py`.
+	If the shared libraries are missing at runtime, print a clear warning
+	so users know the package was not installed/built correctly.
+	"""
+
+	missing = []
 	if not os.path.isfile(Globals.libLSfile):
-		print("liblombscargle.so not found - attempting compilation!")
-		CWD = os.getcwd()
-		os.chdir(Globals.libLSpath)
-		os.system(sudo+'make')
-		os.chdir(CWD)
+		missing.append(Globals.libLSfile)
+	if not os.path.isfile(Globals.libFfile):
+		missing.append(Globals.libFfile)
+
+	if missing:
+		print('WARNING: the following bundled shared libraries are missing:')
+		for m in missing:
+			print('  -', m)
+		print('These libraries are built during packaging. Reinstall the package or run `python setup.py build` in the source tree to produce them.')
