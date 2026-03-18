@@ -122,10 +122,16 @@ jobs:
 
       - name: Build wheel
         run: |
-          # Force arm64-only wheel tagging/build (avoid universal2 assumption).
-          export ARCHFLAGS="-arch arm64"
-          export CMAKE_OSX_ARCHITECTURES="arm64"
-          python -m build --wheel -o dist || python setup.py bdist_wheel
+          # setup.py maps this to CMake arch and wheel platform tag on macOS.
+          export WAVESPEC_MACOS_ARCH="arm64"
+          rm -rf dist
+          mkdir -p dist
+          python -m build --wheel -o dist || python setup.py bdist_wheel -d dist
+          ls -1 dist
+          if ls dist/*universal2*.whl >/dev/null 2>&1; then
+            echo "Unexpected universal2 wheel produced"
+            exit 1
+          fi
 
       - name: Install wheel
         run: |
