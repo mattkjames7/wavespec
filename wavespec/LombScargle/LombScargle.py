@@ -187,7 +187,7 @@ def LombScargle(t,x0,f,Backend='C++',WindowFunction=None,Param=None,Threshold=0.
 		phi = np.zeros((nf,),dtype='float64')
 		a = np.zeros((nf,),dtype='float64')
 		b = np.zeros((nf,),dtype='float64')
-		Fudge = np.bool8(Fudge)
+		Fudge = np.bool(Fudge)
 		Threshold = np.float64(Threshold)
 		
 		#Call the C++ function

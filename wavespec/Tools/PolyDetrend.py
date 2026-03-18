@@ -23,6 +23,9 @@ def PolyDetrend(t,x,Order=1):
 
 	#get the polyfit first
 	good = np.isfinite(x)
+	if good.sum() <= 2:
+		return x
+
 	if not good.all():
 		use = np.where(good)[0]
 		p = np.polyfit(t[good],x[good],Order)
