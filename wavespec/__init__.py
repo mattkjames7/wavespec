@@ -1,3 +1,5 @@
+__version__ = "0.0.6"
+
 from . import Globals
 from ._CheckFirstImport import _CheckFirstImport
 _CheckFirstImport()

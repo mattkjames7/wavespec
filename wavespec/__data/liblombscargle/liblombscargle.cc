@@ -1,5 +1,7 @@
 #include "liblombscargle.h"
 
+static const double WS_PI = 3.14159265358979323846;
+
 /* Calculates angular frequency */
 /***********************************************************************
  * NAME : _angfreq(f,nf,w)
@@ -18,7 +20,7 @@
 void _angfreq(double *f, int nf, double *w) {
 	int i;
 	for (i=0;i<nf;i++) {
-		w[i] = 2*M_PI*f[i];
+		w[i] = 2.0*WS_PI*f[i];
 	}
 } 
 
@@ -298,7 +300,8 @@ void LombScargle(	double *t, double *x, int n, double *f, int nf,
 			A[i] = sqrt(P[i]);
 			
 			/* Phase */
-			phi[i] = fmod(((-atan2(b[i],a[i]) - w[i]*tau) + 3*M_PI),(2.0*M_PI)) - M_PI;
+			double phase0 = -atan2(b[i],a[i]) - w[i]*tau;
+			phi[i] = fmod(phase0 + 3.0*WS_PI, 2.0*WS_PI) - WS_PI;
 			
 			/* Real and imaginary terms*/
 			a[i] = A[i]*cos(phi[i])/2.0;
@@ -324,10 +327,10 @@ void LombScargle(	double *t, double *x, int n, double *f, int nf,
 	}
 	
 	/* Deallocate arrays */
-	delete w;
-	delete wtT;
-	delete sinwtT;
-	delete coswtT;
+	delete[] w;
+	delete[] wtT;
+	delete[] sinwtT;
+	delete[] coswtT;
 	
 }
 
@@ -375,6 +378,6 @@ void LombScargleSam(	double *t, double *x, int n, double *f, int nf,
 	}
 	
 	/*deallocate omega*/
-	delete w;
+	delete[] w;
 
 }

@@ -2,6 +2,7 @@ name: CI
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     branches: [ main, master ]
   pull_request:
@@ -11,8 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.9, 3.10, 3.11]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
@@ -25,8 +27,96 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential
+          python -m pip install --upgrade pip
+
+      - name: Select manylinux Python tag
+        run: |
+          case "${{ matrix.python-version }}" in
+            "3.10") echo "MANYLINUX_PYTAG=cp310-cp310" >> "$GITHUB_ENV" ;;
+            "3.11") echo "MANYLINUX_PYTAG=cp311-cp311" >> "$GITHUB_ENV" ;;
+            "3.12") echo "MANYLINUX_PYTAG=cp312-cp312" >> "$GITHUB_ENV" ;;
+            "3.13") echo "MANYLINUX_PYTAG=cp313-cp313" >> "$GITHUB_ENV" ;;
+            "3.14") echo "MANYLINUX_PYTAG=cp314-cp314" >> "$GITHUB_ENV" ;;
+            *)
+              echo "Unsupported python-version: ${{ matrix.python-version }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Build and repair wheel in manylinux container
+        run: |
+          rm -rf dist wheelhouse
+          mkdir -p dist wheelhouse
+          docker run --rm \
+            -e PYTAG="${MANYLINUX_PYTAG}" \
+            -v "${{ github.workspace }}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux_2_34:latest \
+            /bin/bash -lc '
+              set -euo pipefail
+              if ! command -v cmake >/dev/null 2>&1; then
+                dnf install -y cmake gcc gcc-c++ make
+              fi
+              "/opt/python/${PYTAG}/bin/python" -m pip install --upgrade pip setuptools wheel build auditwheel
+              "/opt/python/${PYTAG}/bin/python" -m build --wheel -o dist
+              auditwheel repair dist/*.whl -w wheelhouse
+            '
+
+      - name: Install wheel
+        run: |
+          python -m pip install --upgrade wheelhouse/*.whl
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-py${{ matrix.python-version }}
+          path: wheelhouse/*.whl
+
+      - name: Build sdist (Linux 3.14)
+        if: matrix.python-version == '3.14'
+        run: |
+          docker run --rm \
+            -e PYTAG="${MANYLINUX_PYTAG}" \
+            -v "${{ github.workspace }}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux_2_34:latest \
+            /bin/bash -lc '
+              set -euo pipefail
+              "/opt/python/${PYTAG}/bin/python" -m pip install --upgrade pip setuptools wheel build
+              "/opt/python/${PYTAG}/bin/python" -m build --sdist -o dist
+            '
+
+      - name: Upload sdist artifact (Linux 3.14)
+        if: matrix.python-version == '3.14'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist-linux-py${{ matrix.python-version }}
+          path: dist/*.tar.gz
+
+      - name: Import test
+        run: |
+          tmpdir=$(mktemp -d)
+          cd "$tmpdir"
+          python -c "import wavespec; print('IMPORT_OK', wavespec.__file__)"
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build tools
+        run: |
           python -m pip install --upgrade pip setuptools wheel build
 
       - name: Build wheel
@@ -37,6 +127,54 @@ jobs:
         run: |
           python -m pip install --upgrade dist/*.whl
 
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-py${{ matrix.python-version }}
+          path: dist/*.whl
+
       - name: Import test
         run: |
-          python -c "import wavespec; print('IMPORT_OK')"
+          tmpdir=$(mktemp -d)
+          cd "$tmpdir"
+          python -c "import wavespec; print('IMPORT_OK', wavespec.__file__)"
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel build
+
+      - name: Build wheel
+        run: |
+          python -m build --wheel -o dist || python setup.py bdist_wheel
+
+      - name: Install wheel
+        run: |
+          $wheel = Get-ChildItem -Path dist -Filter *.whl | Select-Object -First 1
+          if (-not $wheel) { throw "No wheel found in dist/" }
+          python -m pip install --upgrade $wheel.FullName
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-py${{ matrix.python-version }}
+          path: dist/*.whl
+
+      - name: Import test
+        run: |
+          python -c "import os, tempfile; tmpdir = tempfile.mkdtemp(); os.chdir(tmpdir); import wavespec; print('IMPORT_OK', wavespec.__file__)"

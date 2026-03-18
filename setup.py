@@ -1,5 +1,7 @@
 import setuptools
 from setuptools.command.build_py import build_py as _build_py
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+from setuptools.dist import Distribution
 import os
 import subprocess
 import shutil
@@ -8,6 +10,26 @@ import glob
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+
+def getversion():
+    """Read the package version from wavespec/__init__.py."""
+    thispath = os.path.abspath(os.path.dirname(__file__))
+    initfile = os.path.join(thispath, 'wavespec', '__init__.py')
+
+    with open(initfile, 'r') as f:
+        lines = f.readlines()
+
+    version = 'unknown'
+    for line in lines:
+        if '__version__' in line:
+            parts = line.split('=')
+            version = parts[-1].strip().strip('"').strip("'")
+            break
+    return version
+
+
+version = getversion()
 
 
 class build_py(_build_py):
@@ -42,20 +64,43 @@ class build_py(_build_py):
                 ext = 'so'
 
             # copy resulting libs into runtime locations expected by Globals.py
+            cfg_dirs = ['Release', 'RelWithDebInfo', 'Debug', 'MinSizeRel']
             targets = [
                 (
                     [
                         os.path.join(build_dir, 'liblombscargle', f'liblombscargle.{ext}'),
+                        os.path.join(build_dir, 'liblombscargle', f'lombscargle.{ext}'),
+                        *[
+                            os.path.join(build_dir, 'liblombscargle', cfg, f'liblombscargle.{ext}')
+                            for cfg in cfg_dirs
+                        ],
+                        *[
+                            os.path.join(build_dir, 'liblombscargle', cfg, f'lombscargle.{ext}')
+                            for cfg in cfg_dirs
+                        ],
                         os.path.join(build_dir, f'liblombscargle.{ext}'),
+                        os.path.join(build_dir, f'lombscargle.{ext}'),
                         os.path.join(data_dir, 'liblombscargle', 'build', f'liblombscargle.{ext}'),
+                        os.path.join(data_dir, 'liblombscargle', 'build', f'lombscargle.{ext}'),
                     ],
                     os.path.join(data_dir, 'liblombscargle', f'liblombscargle.{ext}'),
                 ),
                 (
                     [
                         os.path.join(build_dir, 'libfilter', f'libfilter.{ext}'),
+                        os.path.join(build_dir, 'libfilter', f'filter.{ext}'),
+                        *[
+                            os.path.join(build_dir, 'libfilter', cfg, f'libfilter.{ext}')
+                            for cfg in cfg_dirs
+                        ],
+                        *[
+                            os.path.join(build_dir, 'libfilter', cfg, f'filter.{ext}')
+                            for cfg in cfg_dirs
+                        ],
                         os.path.join(build_dir, f'libfilter.{ext}'),
+                        os.path.join(build_dir, f'filter.{ext}'),
                         os.path.join(data_dir, 'libfilter', 'build', f'libfilter.{ext}'),
+                        os.path.join(data_dir, 'libfilter', 'build', f'filter.{ext}'),
                     ],
                     os.path.join(data_dir, 'libfilter', f'libfilter.{ext}'),
                 ),
@@ -102,9 +147,22 @@ class build_py(_build_py):
         super().run()
 
 
+class bdist_wheel(_bdist_wheel):
+    def finalize_options(self):
+        super().finalize_options()
+        # This package includes platform-specific native libraries.
+        self.root_is_pure = False
+
+
+class BinaryDistribution(Distribution):
+    def has_ext_modules(self):
+        # Force platlib wheel layout for bundled native shared libraries.
+        return True
+
+
 setuptools.setup(
     name="wavespec",
-    version="0.0.5",
+    version=version,
     author="Matthew Knight James",
     author_email="mattkjames7@gmail.com",
     description="Some spectral analysis tools for analyzing waves in data.",
@@ -136,7 +194,9 @@ setuptools.setup(
     },
     cmdclass={
         'build_py': build_py,
+        'bdist_wheel': bdist_wheel,
     },
+    distclass=BinaryDistribution,
 )
 
 

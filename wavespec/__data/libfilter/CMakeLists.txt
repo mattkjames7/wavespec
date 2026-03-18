@@ -8,8 +8,18 @@ add_library(filter SHARED
 )
 
 target_include_directories(filter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(filter PRIVATE m)
+
+if(NOT WIN32)
+    target_link_libraries(filter PRIVATE m)
+endif()
 
 set_target_properties(filter PROPERTIES
     OUTPUT_NAME "filter"
 )
+
+if(WIN32)
+    set_target_properties(filter PROPERTIES
+        PREFIX "lib"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+endif()
