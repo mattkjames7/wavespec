@@ -12,6 +12,26 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
+def getversion():
+    """Read the package version from wavespec/__init__.py."""
+    thispath = os.path.abspath(os.path.dirname(__file__))
+    initfile = os.path.join(thispath, 'wavespec', '__init__.py')
+
+    with open(initfile, 'r') as f:
+        lines = f.readlines()
+
+    version = 'unknown'
+    for line in lines:
+        if '__version__' in line:
+            parts = line.split('=')
+            version = parts[-1].strip().strip('"').strip("'")
+            break
+    return version
+
+
+version = getversion()
+
+
 class build_py(_build_py):
     """Custom build_py that runs CMake to build bundled shared libs
 
@@ -142,7 +162,7 @@ class BinaryDistribution(Distribution):
 
 setuptools.setup(
     name="wavespec",
-    version="0.0.6",
+    version=version,
     author="Matthew Knight James",
     author_email="mattkjames7@gmail.com",
     description="Some spectral analysis tools for analyzing waves in data.",
