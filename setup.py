@@ -1,5 +1,6 @@
 import setuptools
 from setuptools.command.build_py import build_py as _build_py
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import os
 import subprocess
 import shutil
@@ -125,6 +126,13 @@ class build_py(_build_py):
         super().run()
 
 
+class bdist_wheel(_bdist_wheel):
+    def finalize_options(self):
+        super().finalize_options()
+        # This package includes platform-specific native libraries.
+        self.root_is_pure = False
+
+
 setuptools.setup(
     name="wavespec",
     version="0.0.6",
@@ -159,6 +167,7 @@ setuptools.setup(
     },
     cmdclass={
         'build_py': build_py,
+        'bdist_wheel': bdist_wheel,
     },
 )
 
