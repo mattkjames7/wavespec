@@ -40,4 +40,6 @@ jobs:
 
       - name: Import test
         run: |
-          python -c "import wavespec; print('IMPORT_OK')"
+          tmpdir=$(mktemp -d)
+          cd "$tmpdir"
+          python -c "import wavespec; print('IMPORT_OK', wavespec.__file__)"
