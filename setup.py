@@ -42,11 +42,20 @@ class build_py(_build_py):
                 ext = 'so'
 
             # copy resulting libs into runtime locations expected by Globals.py
+            cfg_dirs = ['Release', 'RelWithDebInfo', 'Debug', 'MinSizeRel']
             targets = [
                 (
                     [
                         os.path.join(build_dir, 'liblombscargle', f'liblombscargle.{ext}'),
                         os.path.join(build_dir, 'liblombscargle', f'lombscargle.{ext}'),
+                        *[
+                            os.path.join(build_dir, 'liblombscargle', cfg, f'liblombscargle.{ext}')
+                            for cfg in cfg_dirs
+                        ],
+                        *[
+                            os.path.join(build_dir, 'liblombscargle', cfg, f'lombscargle.{ext}')
+                            for cfg in cfg_dirs
+                        ],
                         os.path.join(build_dir, f'liblombscargle.{ext}'),
                         os.path.join(build_dir, f'lombscargle.{ext}'),
                         os.path.join(data_dir, 'liblombscargle', 'build', f'liblombscargle.{ext}'),
@@ -58,6 +67,14 @@ class build_py(_build_py):
                     [
                         os.path.join(build_dir, 'libfilter', f'libfilter.{ext}'),
                         os.path.join(build_dir, 'libfilter', f'filter.{ext}'),
+                        *[
+                            os.path.join(build_dir, 'libfilter', cfg, f'libfilter.{ext}')
+                            for cfg in cfg_dirs
+                        ],
+                        *[
+                            os.path.join(build_dir, 'libfilter', cfg, f'filter.{ext}')
+                            for cfg in cfg_dirs
+                        ],
                         os.path.join(build_dir, f'libfilter.{ext}'),
                         os.path.join(build_dir, f'filter.{ext}'),
                         os.path.join(data_dir, 'libfilter', 'build', f'libfilter.{ext}'),
