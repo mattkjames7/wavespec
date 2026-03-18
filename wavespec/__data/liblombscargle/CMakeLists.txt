@@ -24,5 +24,8 @@ set_target_properties(lombscargle PROPERTIES
 )
 
 if(WIN32)
-    set_target_properties(lombscargle PROPERTIES PREFIX "lib")
+    set_target_properties(lombscargle PROPERTIES
+        PREFIX "lib"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
 endif()

@@ -18,5 +18,8 @@ set_target_properties(filter PROPERTIES
 )
 
 if(WIN32)
-    set_target_properties(filter PROPERTIES PREFIX "lib")
+    set_target_properties(filter PROPERTIES
+        PREFIX "lib"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
 endif()
