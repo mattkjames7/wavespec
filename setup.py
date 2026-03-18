@@ -46,16 +46,22 @@ class build_py(_build_py):
                 (
                     [
                         os.path.join(build_dir, 'liblombscargle', f'liblombscargle.{ext}'),
+                        os.path.join(build_dir, 'liblombscargle', f'lombscargle.{ext}'),
                         os.path.join(build_dir, f'liblombscargle.{ext}'),
+                        os.path.join(build_dir, f'lombscargle.{ext}'),
                         os.path.join(data_dir, 'liblombscargle', 'build', f'liblombscargle.{ext}'),
+                        os.path.join(data_dir, 'liblombscargle', 'build', f'lombscargle.{ext}'),
                     ],
                     os.path.join(data_dir, 'liblombscargle', f'liblombscargle.{ext}'),
                 ),
                 (
                     [
                         os.path.join(build_dir, 'libfilter', f'libfilter.{ext}'),
+                        os.path.join(build_dir, 'libfilter', f'filter.{ext}'),
                         os.path.join(build_dir, f'libfilter.{ext}'),
+                        os.path.join(build_dir, f'filter.{ext}'),
                         os.path.join(data_dir, 'libfilter', 'build', f'libfilter.{ext}'),
+                        os.path.join(data_dir, 'libfilter', 'build', f'filter.{ext}'),
                     ],
                     os.path.join(data_dir, 'libfilter', f'libfilter.{ext}'),
                 ),

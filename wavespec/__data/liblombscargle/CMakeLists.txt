@@ -19,3 +19,7 @@ endif()
 set_target_properties(lombscargle PROPERTIES
     OUTPUT_NAME "lombscargle"
 )
+
+if(WIN32)
+    set_target_properties(lombscargle PROPERTIES PREFIX "lib")
+endif()

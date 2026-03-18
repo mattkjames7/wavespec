@@ -1,5 +1,7 @@
 #include "libfilter.h"
 
+static const float WS_PI_F = 3.14159265358979323846f;
+
 
 void LanczosKernelLP(int i0, int nt, float *t, float fc, float *k) {
 	
@@ -8,7 +10,7 @@ void LanczosKernelLP(int i0, int nt, float *t, float fc, float *k) {
 	float t0 = t[i0];
 	float *pidt2 = new float[nt];
 	for (i=0;i<nt;i++) {
-		pidt2[i] = M_PI*fc*(t[i] - t0)/1.5;
+		pidt2[i] = WS_PI_F*fc*(t[i] - t0)/1.5f;
 	}
 	
 	/* calculate the function */
@@ -31,7 +33,7 @@ void LanczosKernelLP(int i0, int nt, float *t, float fc, float *k) {
 	}
 	
 	/* clean up */
-	delete pidt2;
+	delete[] pidt2;
 	
 }
 	
@@ -42,7 +44,7 @@ void LanczosKernelHP(int i0, int nt, float *t, float fc, float *k) {
 	float t0 = t[i0];
 	float *pidt2 = new float[nt];
 	for (i=0;i<nt;i++) {
-		pidt2[i] = M_PI*fc*(t[i] - t0)/1.5;
+		pidt2[i] = WS_PI_F*fc*(t[i] - t0)/1.5f;
 	}
 	
 	/* calculate the function */
@@ -66,7 +68,7 @@ void LanczosKernelHP(int i0, int nt, float *t, float fc, float *k) {
 	k[i0] = 1.0;
 	
 	/* clean up */
-	delete pidt2;
+	delete[] pidt2;
 	
 }
 
@@ -142,8 +144,8 @@ void IFilter(int n, float *t, float *x, float fc, int ftype, float *o) {
 	}
 	
 	/* clean up */
-	delete i0;
-	delete i1;
-	delete k;
+	delete[] i0;
+	delete[] i1;
+	delete[] k;
 	
 }

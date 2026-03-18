@@ -13,3 +13,7 @@ target_link_libraries(filter PRIVATE m)
 set_target_properties(filter PROPERTIES
     OUTPUT_NAME "filter"
 )
+
+if(WIN32)
+    set_target_properties(filter PROPERTIES PREFIX "lib")
+endif()
