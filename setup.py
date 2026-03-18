@@ -1,6 +1,7 @@
 import setuptools
 from setuptools.command.build_py import build_py as _build_py
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+from setuptools.dist import Distribution
 import os
 import subprocess
 import shutil
@@ -133,6 +134,12 @@ class bdist_wheel(_bdist_wheel):
         self.root_is_pure = False
 
 
+class BinaryDistribution(Distribution):
+    def has_ext_modules(self):
+        # Force platlib wheel layout for bundled native shared libraries.
+        return True
+
+
 setuptools.setup(
     name="wavespec",
     version="0.0.6",
@@ -169,6 +176,7 @@ setuptools.setup(
         'build_py': build_py,
         'bdist_wheel': bdist_wheel,
     },
+    distclass=BinaryDistribution,
 )
 
 
